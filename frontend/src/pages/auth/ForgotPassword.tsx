@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { post } from '../../utils/api';
 import { FaEnvelope } from 'react-icons/fa';
 import { IconType, IconBaseProps } from 'react-icons';
+import { toast } from 'react-toastify';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
+  const navigate = useNavigate();
   const renderIcon = (IconComponent: IconType, className?: string) => {
     const Icon = IconComponent as React.ComponentType<IconBaseProps>;
     return <Icon className={className} />;
@@ -18,14 +17,13 @@ const ForgotPassword: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       await post('/auth/forgot-password', { email });
-      setSuccess('Password reset instructions have been sent to your email');
+      toast.success('Password reset instructions have been sent to your email');
+      navigate(`/reset-password/${email}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send reset instructions');
+      toast.error(err.response?.data?.message || 'Failed to send reset instructions');
     } finally {
       setLoading(false);
     }
@@ -42,18 +40,6 @@ const ForgotPassword: React.FC = () => {
             Enter your email address and we'll send you instructions to reset your password
           </p>
         </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
-            {success}
-          </div>
-        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div>

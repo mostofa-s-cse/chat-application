@@ -6,12 +6,12 @@ import { IconBaseProps, IconType } from 'react-icons';
 import { FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
 import { setAuth } from '../../store/slices/authSlice';
 import { LoginResponse } from '../../types';
+import { toast } from 'react-toastify';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -23,14 +23,13 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-
     try {
       const response = await post<LoginResponse>('/auth/login', { email, password });
       dispatch(setAuth({ user: response.data.user, token: response.data.accessToken }));
+      toast.success('Login successful!');
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.message || 'Failed to login');
+      toast.error(err.response?.message || 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -40,7 +39,7 @@ const Login: React.FC = () => {
     try {
       window.location.href = '/api/auth/google';
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to login with Google');
+      toast.error(err.response?.data?.message || 'Failed to login with Google');
     }
   };
 
@@ -58,12 +57,6 @@ const Login: React.FC = () => {
             </Link>
           </p>
         </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-            {error}
-          </div>
-        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">

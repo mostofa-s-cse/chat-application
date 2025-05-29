@@ -2,6 +2,8 @@ import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Provider, useSelector } from 'react-redux';
 import { store, RootState } from './store';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -31,7 +33,7 @@ const router = createBrowserRouter([
       { path: '/login', element: <Login /> },
       { path: '/register', element: <Register /> },
       { path: '/forgot-password', element: <ForgotPassword /> },
-      { path: '/reset-password', element: <ResetPassword /> },
+      { path: '/reset-password/:email', element: <ResetPassword /> },
     ],
   },
   {
@@ -54,6 +56,7 @@ function App() {
     <Provider store={store}>
       <div className="min-h-screen bg-gray-50">
         <RouterProvider router={router} />
+        <ToastContainer position="top-right" aria-label="notification" />
       </div>
     </Provider>
   );

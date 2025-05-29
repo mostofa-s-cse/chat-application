@@ -4,6 +4,7 @@ import { post } from '../../utils/api';
 import { FaUser, FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
 import { LoginResponse } from '../../types';
 import { IconType, IconBaseProps } from 'react-icons';
+import { toast } from 'react-toastify';
 
 const Register: React.FC = () => {
   const [firstName, setFirstName] = useState('');
@@ -12,7 +13,6 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const renderIcon = (IconComponent: IconType, className?: string) => {
@@ -23,12 +23,10 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
     setLoading(true);
-    setError(null);
-
     try {
       await post<LoginResponse>('/auth/register', {
         firstName,
@@ -36,9 +34,10 @@ const Register: React.FC = () => {
         email,
         password,
       });
+      toast.success('Registration successful! Please verify your email.');
       navigate(`/verify-email/${email}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to register');
+      toast.error(err.response?.data?.message || 'Failed to register');
     } finally {
       setLoading(false);
     }
@@ -48,7 +47,7 @@ const Register: React.FC = () => {
     try {
       window.location.href = '/api/auth/google';
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to login with Google');
+      toast.error(err.response?.data?.message || 'Failed to login with Google');
     }
   };
 
@@ -66,12 +65,6 @@ const Register: React.FC = () => {
             </Link>
           </p>
         </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-            {error}
-          </div>
-        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">

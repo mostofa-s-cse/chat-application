@@ -1,17 +1,28 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { post } from '../../utils/api';
 import { FaEnvelope, FaSpinner } from 'react-icons/fa';
 import { renderIcon } from '../../utils/icons';
+import { toast } from 'react-toastify';
 
 const VerifyEmail: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
+  const [timer, setTimer] = useState(180);
   const navigate = useNavigate();
   const { email } = useParams();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    if (timer <= 0) return;
+    const interval = setInterval(() => setTimer(t => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  const minutes = Math.floor(timer / 60);
+  const seconds = timer % 60;
+  const formatted = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
   const handleOtpChange = (index: number, value: string) => {
     if (!/^[0-9]?$/.test(value)) return;
@@ -41,16 +52,17 @@ const VerifyEmail: React.FC = () => {
     e.preventDefault();
     const otpValue = otp.join('');
     if (otpValue.length !== 6 || !email) {
-      setError('Please enter the 6-digit OTP');
+      toast.error('Please enter the 6-digit OTP');
       return;
     }
     setLoading(true);
-    setError(null);
     try {
-      await post('/auth/verify-otp', { email, otp: otpValue });
+     const response = await post('/auth/verify-otp', { email, otp: otpValue });
+      toast.success('Email verified! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
+      return response;
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to verify OTP');
+      toast.error(err.response?.data?.message || 'Failed to verify OTP');
     } finally {
       setLoading(false);
     }
@@ -58,15 +70,16 @@ const VerifyEmail: React.FC = () => {
 
   const handleResendVerification = async () => {
     if (!email) {
-      setError('Email address is missing');
+      toast.error('Email address is missing');
       return;
     }
     setResending(true);
     try {
       await post('/auth/resend-otp', { email });
-      setError('Verification OTP has been resent. Please check your inbox.');
+      toast.success('Verification OTP has been resent. Please check your inbox.');
+      setTimer(180);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to resend verification OTP');
+      toast.error(err.response?.data?.message || 'Failed to resend verification OTP');
     } finally {
       setResending(false);
     }
@@ -103,11 +116,6 @@ const VerifyEmail: React.FC = () => {
             Please enter the OTP sent to your email address.
           </p>
         </div>
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-center">
-            {error}
-          </div>
-        )}
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="flex justify-center gap-3 mb-2">
             {otp.map((digit, idx) => (
@@ -124,15 +132,19 @@ const VerifyEmail: React.FC = () => {
                 className={`w-12 h-12 text-center text-2xl border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all ${digit ? 'border-orange-500' : 'border-gray-300'} ${idx === otp.findIndex(d => d === '') ? 'ring-2 ring-orange-400' : ''}`}
                 autoFocus={idx === 0}
                 aria-label={`OTP digit ${idx + 1}`}
+                disabled={timer === 0}
               />
             ))}
           </div>
-          <div className="text-center text-sm text-gray-600 mb-2">
-            
+          <div className="text-center text-sm text-gray-500 mb-2">
+            {timer > 0
+              ? <>OTP expires in <span className="font-semibold text-orange-500">{formatted}</span></>
+              : <span className="text-red-500 font-semibold">OTP expired. Please resend.</span>
+            }
           </div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || timer === 0}
             className="w-full py-3 rounded-full text-white text-lg font-semibold bg-blue-500 hover:bg-blue-600 transition-all shadow-md flex items-center justify-center"
           >
             {loading ? (
