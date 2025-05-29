@@ -1,60 +1,62 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import { PrismaClient } from '@prisma/client';
-import dotenv from 'dotenv';
-import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
-import messageRoutes from './routes/messages';
-import groupRoutes from './routes/groups';
-import { errorHandler } from './middleware/error';
-import { authenticateToken } from './middleware/auth';
-import { initializeSocket } from './socket';
-import { NextFunction, Request, Response } from 'express';
-import { AppError } from './middleware/error';
+import app from './app';
+import cluster from 'cluster';
+import os from 'os';
+import { Server as SocketIOServer } from 'socket.io';
+import { setupSocket } from './socket';
 
-dotenv.config();
 
-const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-}) as Server;
+const numCPUs = os.cpus().length;
 
-export const prisma = new PrismaClient();
+if (cluster.isPrimary) {
+  console.log(`Primary ${process.pid} is running`);
 
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-}));
-app.use(helmet());
-app.use(morgan('dev'));
-app.use(express.json());
+  // Fork workers
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', authenticateToken, userRoutes);
-app.use('/api/messages', authenticateToken, messageRoutes);
-app.use('/api/groups', authenticateToken, groupRoutes);
+  cluster.on('exit', (worker) => {
+    console.log(`Worker ${worker.process.pid} died`);
+    // Replace the dead worker
+    cluster.fork();
+  });
+} else {
+  const PORT = process.env.PORT || 4000;
 
-// Error handling
-app.use((err: Error | AppError, req: Request, res: Response, next: NextFunction) => {
-  errorHandler(err, req, res, next);
-});
+  const server = app.listen(PORT, () => {
+    console.log(`Worker ${process.pid} started on port ${PORT}`);
+  });
 
-// Initialize Socket.IO
-initializeSocket(io);
+  // Initialize Socket.io
+  const io = new SocketIOServer(server, {
+    cors: {
+      origin: '*', // Adjust as needed for security
+      methods: ['GET', 'POST']
+    }
+  });
+  setupSocket(io);
 
-const PORT = process.env.PORT || 5000;
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err: Error) => {
+    console.log('UNHANDLED REJECTION! 💥 Shutting down...');
+    console.log(err.name, err.message);
+    server.close(() => {
+      process.exit(1);
+    });
+  });
 
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (err: Error) => {
+    console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+    console.log(err.name, err.message);
+    process.exit(1);
+  });
+
+  // Handle SIGTERM
+  process.on('SIGTERM', () => {
+    console.log('👋 SIGTERM RECEIVED. Shutting down gracefully');
+    server.close(() => {
+      console.log('💥 Process terminated!');
+    });
+  });
+}

@@ -1,169 +1,165 @@
 import { Request, Response, NextFunction } from 'express';
+import {
+  createUser,
+  getUserById,
+  searchUsers,
+  updateUser,
+  deleteUser,
+  getAllUsers,
+} from '../services/userService';
+import { AppError } from '../middleware/errorHandler';
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { AppError } from '../utils/errorHandler';
-import { config } from '../config/config';
 
 const prisma = new PrismaClient();
 
-const signToken = (id: string) => {
-  return jwt.sign({ id }, config.jwtSecret, {
-    expiresIn: '30d',
-  });
-};
-
-export const register = async (req: Request, res: Response, next: NextFunction) => {
+export const createUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { email, username, password, fullName } = req.body;
+    // Create user data object
+    const userData = {
+      ...req.body,
+      profileImage: req.file ? `/uploads/profiles/${req.file.filename}` : null
+    };
 
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ email }, { username }],
-      },
-    });
-
-    if (existingUser) {
-      return next(new AppError('Email or username already exists', 400));
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        password: hashedPassword,
-        fullName,
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        avatar: true,
-        status: true,
-      },
-    });
-
-    const token = signToken(user.id);
-
+    const user = await createUser(userData);
     res.status(201).json({
-      status: 'success',
-      token,
-      data: { user },
+      success: true,
+      message: 'User created successfully',
+      data: user
     });
   } catch (error) {
     next(error);
   }
 };
 
-export const login = async (req: Request, res: Response, next: NextFunction) => {
+export const getUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { email, password } = req.body;
-
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const result = await getAllUsers(req);
+    res.status(200).json({
+      success: true,
+      message: 'Users retrieved successfully',
+      data: result.data,
+      pagination: result.pagination
     });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return next(new AppError('Incorrect email or password', 401));
+export const getUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const user = await getUserById(id);
+    res.status(200).json({
+      success: true,
+      message: 'User retrieved successfully',
+      data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const searchUsersController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { query } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (!query) {
+      throw new AppError('Search query is required', 400);
     }
 
-    const token = signToken(user.id);
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { status: 'online' },
-    });
-
+    const result = await searchUsers(query as string, page, limit);
     res.status(200).json({
-      status: 'success',
-      token,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          fullName: user.fullName,
-          avatar: user.avatar,
-          status: 'online',
-        },
-      },
+      success: true,
+      message: 'Users search completed',
+      ...result
     });
   } catch (error) {
     next(error);
   }
 };
 
-export const getMe = async (req: Request, res: Response, next: NextFunction) => {
+export const updateUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const updateData = { ...req.body };
+    
+    // Handle file upload if present
+    if (req.file) {
+      updateData.profileImage = `/uploads/profiles/${req.file.filename}`;
+    }
+
+    const updatedUser = await updateUser(id, updateData);
+    res.status(200).json({
+      success: true,
+      message: 'User updated successfully',
+      data: updatedUser
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    await deleteUser(id);
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUserStatus = async (req: Request, res: Response) => {
+  const { userId, status } = req.body;
+  try {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { status }
+    });
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update user status' });
+  }
+};
+
+export const getUserStatus = async (req: Request, res: Response) => {
+  const { userId } = req.params;
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        avatar: true,
-        status: true,
-        lastSeen: true,
-      },
+      where: { id: userId },
+      select: { status: true }
     });
-
-    res.status(200).json({
-      status: 'success',
-      data: { user },
-    });
+    res.status(200).json(user);
   } catch (error) {
-    next(error);
-  }
-};
-
-export const updateMe = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { fullName, avatar } = req.body;
-
-    const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: {
-        fullName,
-        avatar,
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        avatar: true,
-        status: true,
-      },
-    });
-
-    res.status(200).json({
-      status: 'success',
-      data: { user },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const logout = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data: {
-        status: 'offline',
-        lastSeen: new Date(),
-      },
-    });
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Logged out successfully',
-    });
-  } catch (error) {
-    next(error);
+    res.status(500).json({ error: 'Failed to fetch user status' });
   }
 }; 
