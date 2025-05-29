@@ -1,50 +1,73 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
-import { setMessages, addMessage, setSelectedUser, setUsers } from '../store/slices/chatSlice';
-import api from '../api/axios';
+import { useState, useEffect, useCallback } from 'react';
+import { post, get } from '../utils/api';
+import socketService from '../utils/socket';
+import { Message, User } from '../types';
 
-export const useChat = () => {
-  const dispatch = useDispatch();
-  const { messages, selectedUser, users } = useSelector((state: RootState) => state.chat);
+interface UseChatReturn {
+  messages: Message[];
+  loading: boolean;
+  error: string | null;
+  sendMessage: (content: string) => Promise<void>;
+  fetchMessages: () => Promise<void>;
+  otherParticipant: User | null;
+}
 
-  const getMessages = async (userId: string) => {
+export const useChat = (chatId: string | undefined): UseChatReturn => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
+
+  const fetchMessages = useCallback(async () => {
+    if (!chatId) return;
     try {
-      const { data } = await api.get(`/messages/${userId}`);
-      dispatch(setMessages(data));
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+      setLoading(true);
+      const response = await get<{ messages: Message[]; otherParticipant: User }>(`/chats/${chatId}`);
+      setMessages(response.messages);
+      setOtherParticipant(response.otherParticipant);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch messages');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [chatId]);
 
-  const sendMessage = async (message: { content: string; receiverId: string; type: 'text' | 'image' | 'file' }) => {
+  const sendMessage = useCallback(async (content: string) => {
+    if (!chatId) return;
     try {
-      const { data } = await api.post('/messages', message);
-      dispatch(addMessage(data));
-    } catch (error) {
-      console.error('Error sending message:', error);
+      const response = await post<Message>(`/chats/${chatId}/messages`, { content });
+      setMessages((prev) => [...prev, response]);
+      socketService.sendMessage(chatId, content);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send message');
     }
-  };
+  }, [chatId]);
 
-  const selectUser = (user: any) => {
-    dispatch(setSelectedUser(user));
-  };
+  useEffect(() => {
+    if (chatId) {
+      socketService.joinChat(chatId);
+      fetchMessages();
 
-  const fetchUsers = async () => {
-    try {
-      const { data } = await api.get('/users');
-      dispatch(setUsers(data));
-    } catch (error) {
-      console.error('Error fetching users:', error);
+      const socket = socketService.getSocket();
+      if (socket) {
+        socket.on('new_message', (message: Message) => {
+          setMessages((prev) => [...prev, message]);
+        });
+      }
+
+      return () => {
+        socketService.leaveChat(chatId);
+        socket?.off('new_message');
+      };
     }
-  };
+  }, [chatId, fetchMessages]);
 
   return {
     messages,
-    selectedUser,
-    users,
-    getMessages,
+    loading,
+    error,
     sendMessage,
-    selectUser,
-    fetchUsers,
+    fetchMessages,
+    otherParticipant,
   };
 }; 

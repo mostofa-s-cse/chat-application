@@ -1,35 +1,17 @@
-import winston from 'winston';
+import fs from 'fs';
 import path from 'path';
 
-const logDir = 'logs';
-const { combine, timestamp, printf, colorize } = winston.format;
+const logDir = path.join(process.cwd(), 'logs');
 
-const logFormat = printf(({ level, message, timestamp }) => {
-  return `${timestamp} ${level}: ${message}`;
-});
+// Ensure logs directory exists
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
 
-export const logger = winston.createLogger({
-  format: combine(
-    timestamp(),
-    logFormat
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: path.join(logDir, 'error.log'),
-      level: 'error',
-    }),
-    new winston.transports.File({
-      filename: path.join(logDir, 'combined.log'),
-    }),
-  ],
-});
-
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: combine(
-      colorize(),
-      timestamp(),
-      logFormat
-    ),
-  }));
-} 
+export const logToFile = (service: string, message: string, error?: any) => {
+  const timestamp = new Date().toISOString();
+  const logFilePath = path.join(logDir, `${service}.log`);
+  const logMessage = `[${timestamp}] ${message}${error ? ` - Error: ${error.message}` : ''}\n`;
+  
+  fs.appendFileSync(logFilePath, logMessage);
+}; 
