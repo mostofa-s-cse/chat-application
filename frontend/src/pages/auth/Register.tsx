@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { post } from '../../utils/api';
+import { post } from '../../utils/apiBase';
 import { FaUser, FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
 import { LoginResponse } from '../../types';
 import { IconType, IconBaseProps } from 'react-icons';

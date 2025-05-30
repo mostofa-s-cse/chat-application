@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { post } from '../../utils/api';
+import { post } from '../../utils/apiBase';
 import { IconBaseProps, IconType } from 'react-icons';
 import { FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
 import { setAuth } from '../../store/slices/authSlice';

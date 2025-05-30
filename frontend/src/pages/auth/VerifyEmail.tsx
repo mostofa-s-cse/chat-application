@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { post } from '../../utils/api';
+import { post } from '../../utils/apiBase';
 import { FaEnvelope, FaSpinner } from 'react-icons/fa';
 import { renderIcon } from '../../utils/icons';
 import { toast } from 'react-toastify';

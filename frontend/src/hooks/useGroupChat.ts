@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { post, get } from '../utils/api';
+import { post, get } from '../utils/apiBase';
 import socketService from '../utils/socket';
 
 interface GroupMessage {

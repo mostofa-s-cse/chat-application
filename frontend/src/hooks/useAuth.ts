@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { post } from '../utils/api';
+import { post } from '../utils/apiBase';
 import { logout as logoutAction } from '../store/slices/authSlice';
 import { AppDispatch } from '../store';
 

@@ -4,8 +4,8 @@ import { RootState } from '../../store';
 import { updateProfile } from '../../store/slices/authSlice';
 import { FaUserCircle, FaCamera } from 'react-icons/fa';
 import { renderIcon } from '../../utils/icons';
-import { put } from '../../utils/api';
 import { User } from '../../types';
+import { putUsers } from '../../utils/api';
 
 const Profile: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -25,7 +25,7 @@ const Profile: React.FC = () => {
     setSuccess(null);
 
     try {
-      await put('/users/profile', formData);
+      await putUsers('/users/profile', formData);
       dispatch(updateProfile(formData));
       setSuccess('Profile updated successfully');
     } catch (err: any) {

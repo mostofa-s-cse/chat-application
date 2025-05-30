@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { post, get } from '../utils/api';
+import { post, get } from '../utils/apiBase';
 import socketService from '../utils/socket';
 import { Message, User } from '../types';
 

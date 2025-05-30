@@ -1,151 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { get } from '../../utils/api';
-import { IoMdChatboxes } from 'react-icons/io';
-import { BsThreeDotsVertical } from 'react-icons/bs';
-import { FaUserCircle } from 'react-icons/fa';
-import { IconType, IconBaseProps } from 'react-icons';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaSearch, FaPlus, FaUsers, FaUserPlus } from 'react-icons/fa';
+import { renderIcon } from '../../utils/icons';
 
-interface Chat {
+interface ChatPreview {
   id: string;
-  participants: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    avatar?: string;
-  }[];
-  lastMessage?: {
-    content: string;
-    createdAt: string;
-    senderId: string;
-  };
-  unreadCount: number;
+  name: string;
+  avatar?: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: number;
+  isGroup: boolean;
+  online?: boolean;
 }
 
 const Chats: React.FC = () => {
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const currentUser = useSelector((state: any) => state.auth.user);
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showNewChatMenu, setShowNewChatMenu] = useState(false);
+  
+  // Mock data - replace with actual data from your backend
+  const [chats] = useState<ChatPreview[]>([
+    {
+      id: '1',
+      name: 'John Doe',
+      avatar: 'https://storage.googleapis.com/a1aa/image/4e58fbe4-113c-45b9-1d4a-9417475fd1d2.jpg',
+      lastMessage: 'Hey, how are you?',
+      timestamp: '12:30',
+      unread: 2,
+      isGroup: false,
+      online: true
+    },
+    {
+      id: '2',
+      name: 'Project Team',
+      lastMessage: 'Meeting at 3 PM',
+      timestamp: '11:45',
+      unread: 5,
+      isGroup: true
+    },
+    // Add more mock chats here
+  ]);
 
-  const renderIcon = (IconComponent: IconType, className?: string) => {
-    const Icon = IconComponent as React.ComponentType<IconBaseProps>;
-    return <Icon className={className} />;
+  const filteredChats = chats.filter(chat => 
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleNewChatClick = () => {
+    setShowNewChatMenu(!showNewChatMenu);
   };
 
-  useEffect(() => {
-    const fetchChats = async () => {
-      try {
-        const response = await get<{ data: Chat[] }>('/chats');
-        setChats(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch chats');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChats();
-  }, []);
-
-  const getOtherParticipant = (chat: Chat) => {
-    return chat.participants.find(p => p.id !== currentUser?.id);
+  const handleNewIndividualChat = () => {
+    navigate('/new-chat');
+    setShowNewChatMenu(false);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center p-4">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
+  const handleNewGroupChat = () => {
+    navigate('/new-group');
+    setShowNewChatMenu(false);
+  };
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-4 border-b bg-white">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-            {renderIcon(IoMdChatboxes, "mr-2 text-blue-600")}
-            Chats
-          </h1>
-          <button className="p-2 hover:bg-gray-100 rounded-full">
-            {renderIcon(BsThreeDotsVertical, "text-gray-500")}
-          </button>
+    <div className="flex flex-col h-full bg-white">
+      {/* Header */}
+      <div className="p-4 border-b">
+        <div className="relative">
+          <div className="flex items-center justify-center">
+            <input
+              type="text"
+              placeholder="Search chats..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {renderIcon(FaSearch, "absolute left-3 top-1/3 -translate-y-1/2 text-gray-400")}
+          </div>
         </div>
       </div>
 
-      {chats.length === 0 ? (
-        <div className="text-center p-4">
-          {renderIcon(FaUserCircle, "mx-auto h-12 w-12 text-gray-400")}
-          <p className="mt-2 text-gray-500">No conversations yet</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-200">
-          {chats.map((chat) => {
-            const otherParticipant = getOtherParticipant(chat);
-            return (
-              <Link
-                key={chat.id}
-                to={`/chat/${chat.id}`}
-                className="block hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center p-4">
-                  <div className="flex-shrink-0">
-                    {otherParticipant?.avatar ? (
-                      <img
-                        src={otherParticipant.avatar}
-                        alt={`${otherParticipant.firstName} ${otherParticipant.lastName}`}
-                        className="h-12 w-12 rounded-full"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 font-medium">
-                          {otherParticipant?.firstName[0]}
-                          {otherParticipant?.lastName[0]}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="ml-4 flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {otherParticipant?.firstName} {otherParticipant?.lastName}
-                      </p>
-                      {chat.lastMessage && (
-                        <p className="text-xs text-gray-500">
-                          {new Date(chat.lastMessage.createdAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <p className="text-sm text-gray-500 truncate">
-                        {chat.lastMessage?.content || 'No messages yet'}
-                      </p>
-                      {chat.unreadCount > 0 && (
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-600 text-xs font-medium text-white">
-                          {chat.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+      {/* Chat List */}
+      <div className="flex-1 overflow-y-auto">
+        {filteredChats.map((chat) => (
+          <div
+            key={chat.id}
+            onClick={() => navigate(`/chat/${chat.id}`)}
+            className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+          >
+            <div className="relative">
+              {chat.avatar ? (
+                <img
+                  src={chat.avatar}
+                  alt={chat.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  {renderIcon(chat.isGroup ? FaUsers : FaUsers, "text-blue-500 text-xl")}
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+              )}
+              {chat.online && (
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+              )}
+            </div>
+            <div className="ml-4 flex-1">
+              <div className="flex justify-between items-start">
+                <h3 className="font-medium text-gray-900">{chat.name}</h3>
+                <span className="text-xs text-gray-500">{chat.timestamp}</span>
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                <p className="text-sm text-gray-500 truncate max-w-[200px]">
+                  {chat.lastMessage}
+                </p>
+                {chat.unread > 0 && (
+                  <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {chat.unread}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* New Chat Button with Menu */}
+      <div className="p-4 border-t relative">
+        <button
+          onClick={handleNewChatClick}
+          className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white py-2 px-4 rounded-full hover:bg-blue-600 transition-colors"
+        >
+          {renderIcon(FaPlus, "text-lg")}
+          <span>New Chat</span>
+        </button>
+
+        {/* New Chat Menu */}
+        {showNewChatMenu && (
+          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg border border-gray-200">
+            <button
+              onClick={handleNewIndividualChat}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left"
+            >
+              {renderIcon(FaUserPlus, "text-blue-500")}
+              <span>New Individual Chat</span>
+            </button>
+            <button
+              onClick={handleNewGroupChat}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left border-t border-gray-100"
+            >
+              {renderIcon(FaUsers, "text-blue-500")}
+              <span>New Group Chat</span>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

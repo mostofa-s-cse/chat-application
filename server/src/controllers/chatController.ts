@@ -1,5 +1,15 @@
 import { Request, Response } from 'express';
-import { createMessage, fetchMessages } from '../services/chatService';
+import { createChat as createChatService, createMessage, fetchMessages } from '../services/chatService';
+
+export const createChat = async (req: Request, res: Response) => {
+  const { participantIds } = req.body;
+  try {
+    const chat = await createChatService(participantIds);
+    res.status(201).json(chat);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create chat' });
+  }
+};
 
 export const sendMessage = async (req: Request, res: Response) => {
   const { content, senderId, receiverId } = req.body;

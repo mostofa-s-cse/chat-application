@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { get, post } from './apiBase';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 
@@ -58,24 +59,33 @@ api.interceptors.response.use(
   }
 );
 
-export const get = async <T>(url: string, config?: any) => {
+export const getUsers = async <T>(url: string, config?: any) => {
   const response = await api.get<T>(url, config);
   return response.data;
 };
 
-export const post = async <T>(url: string, data?: any, config?: any) => {
+export const postUsers = async <T>(url: string, data?: any, config?: any) => {
   const response = await api.post<T>(url, data, config);
   return response.data;
 };
 
-export const put = async <T>(url: string, data?: any, config?: any) => {
+export const putUsers = async <T>(url: string, data?: any, config?: any) => {
   const response = await api.put<T>(url, data, config);
   return response.data;
 };
 
-export const del = async <T>(url: string, config?: any) => {
+export const deleteUsers = async <T>(url: string, config?: any) => {
   const response = await api.delete<T>(url, config);
   return response.data;
 };
+
+export const searchUsers = (query: string) =>
+  get(`/users/search?query=${encodeURIComponent(query)}`);
+
+export const createGroup = (name: string, description: string, creatorId: string, memberIds: string[]) =>
+  post('/groups/create', { name, description, creatorId, memberIds });
+
+export const createChat = (participantIds: string[]) =>
+  post('/chats/create', { participantIds });
 
 export default api; 

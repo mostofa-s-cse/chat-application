@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { post } from '../../utils/api';
+import { post } from '../../utils/apiBase';
 import { FaEnvelope } from 'react-icons/fa';
 import { IconType, IconBaseProps } from 'react-icons';
 import { toast } from 'react-toastify';
