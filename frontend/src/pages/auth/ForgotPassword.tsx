@@ -2,17 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { post } from '../../utils/apiBase';
 import { FaEnvelope } from 'react-icons/fa';
-import { IconType, IconBaseProps } from 'react-icons';
 import { toast } from 'react-toastify';
+import { renderIcon } from '../../utils/icons';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const renderIcon = (IconComponent: IconType, className?: string) => {
-    const Icon = IconComponent as React.ComponentType<IconBaseProps>;
-    return <Icon className={className} />;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

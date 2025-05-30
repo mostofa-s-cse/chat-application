@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { post } from '../../utils/apiBase';
-import { IconBaseProps, IconType } from 'react-icons';
 import { FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
 import { setAuth } from '../../store/slices/authSlice';
 import { LoginResponse } from '../../types';
 import { toast } from 'react-toastify';
+import { renderIcon } from '../../utils/icons';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,11 +14,6 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  const renderIcon = (IconComponent: IconType, className?: string) => {
-    const Icon = IconComponent as React.ComponentType<IconBaseProps>;
-    return <Icon className={className} />;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

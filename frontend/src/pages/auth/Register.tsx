@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { post } from '../../utils/apiBase';
 import { FaUser, FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
 import { LoginResponse } from '../../types';
-import { IconType, IconBaseProps } from 'react-icons';
 import { toast } from 'react-toastify';
+import { renderIcon } from '../../utils/icons';
 
 const Register: React.FC = () => {
   const [firstName, setFirstName] = useState('');
@@ -14,11 +14,6 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const renderIcon = (IconComponent: IconType, className?: string) => {
-    const Icon = IconComponent as React.ComponentType<IconBaseProps>;
-    return <Icon className={className} />;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

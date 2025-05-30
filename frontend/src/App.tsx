@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider, Navigate, Route } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Provider, useSelector } from 'react-redux';
 import { store, RootState } from './store';
 import { ToastContainer } from 'react-toastify';
@@ -19,7 +19,6 @@ import Chat from './pages/chat/Chat';
 import GroupChat from './pages/chat/GroupChat';
 import Profile from './pages/profile/Profile';
 import Settings from './pages/settings/Settings';
-import Chats from './pages/chat/Chats';
 import NewChat from './pages/chat/NewChat';
 
 // Protected Route Component
@@ -41,6 +40,7 @@ const router = createBrowserRouter([
   {
     element: <ProtectedRoute><MainLayout /></ProtectedRoute>,
     children: [
+      {path: '/', element: <Chat />},
       { path: '/chat/:chatId', element: <Chat /> },
       { path: '/group/:groupId', element: <GroupChat /> },
       { path: '/profile', element: <Profile /> },

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { FaSearch, FaBars, FaTimes, FaPlus } from 'react-icons/fa'
-import { IconBaseProps, IconType } from 'react-icons';
+import { renderIcon } from '../utils/icons';
 
 interface MenuItem {
   id: string;
@@ -22,10 +22,9 @@ interface MenuTab {
 
 const menuTabs: MenuTab[] = [
   { id: 'all', label: 'All' },
-  { id: 'work', label: 'Work' },
-  { id: 'private', label: 'Private', unreadCount: 2 },
   { id: 'groups', label: 'Groups' },
-  { id: 'channels', label: 'Channels' }
+  { id: 'profile', label: 'Profile' },
+  { id: 'settings', label: 'Settings' }
 ];
 
 const menuItems: MenuItem[] = [
@@ -80,11 +79,6 @@ const LeftSidebar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<MenuItem[]>(menuItems);
-
-  const renderIcon = (IconComponent: IconType, className?: string) => {
-    const Icon = IconComponent as React.ComponentType<IconBaseProps>;
-    return <Icon className={className} />;
-  };
 
   const handleChatClick = (chatId: string) => {
     navigate(`/chat/${chatId}`);
@@ -158,7 +152,7 @@ const LeftSidebar = () => {
                   onClick={() => handleTabClick(tab.id)}
                   className="flex-auto px-1 mx-1 -mb-px text-center rounded-t-lg cursor-pointer last:mr-0 hover:bg-gray-200"
                 >
-                  <a className={`flex items-center justify-center block py-2 text-xs font-semibold leading-normal tracking-wide border-b-2 ${
+                  <Link to={`/${tab.id}`} className={`flex items-center justify-center block py-2 text-xs font-semibold leading-normal tracking-wide border-b-2 ${
                     activeTab === tab.id ? 'border-blue-500' : 'border-transparent'
                   }`}>
                     {tab.label}
@@ -167,7 +161,7 @@ const LeftSidebar = () => {
                         {tab.unreadCount}
                       </span>
                     )}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
