@@ -6,9 +6,17 @@ import { IoIosSearch, IoMdClose, IoMdInformationCircleOutline } from "react-icon
 import { renderIcon } from '../../utils/icons';
 import { FaPaperPlane, FaUser } from 'react-icons/fa';
 import { User } from '../../types';
-import { get } from '../../utils/apiBase';
+import { get, post } from '../../utils/apiBase';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
+
+interface Message {
+  id: string;
+  content: string;
+  senderId: string;
+  receiverId: string;
+  createdAt: string;
+}
 
 interface ChatParticipant {
   id: string;
@@ -33,12 +41,15 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [sending, setSending] = useState(false);
   const currentUser = useSelector((state: RootState) => state.auth.user);
 
   useEffect(() => {
     const fetchChat = async () => {
       try {
-        const response = await get< Chat >(`/chat/${chatId}`);
+        const response = await get<Chat>(`/chat/${chatId}`);
         setChat(response);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to fetch chat details');
@@ -51,6 +62,48 @@ const Chat = () => {
       fetchChat();
     }
   }, [chatId]);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!chat || !currentUser) return;
+      
+      const otherParticipant = chat.participants[0]?.user;
+      if (!otherParticipant) return;
+
+      try {
+        const response = await get<Message[]>(`/chat/messages?senderId=${currentUser.id}&receiverId=${otherParticipant.id}`);
+        setMessages(response);
+      } catch (err: any) {
+        console.error('Failed to fetch messages:', err);
+      }
+    };
+
+    fetchMessages();
+  }, [chat, currentUser]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !chat || !currentUser) return;
+
+    const otherParticipant = chat.participants[0]?.user;
+    if (!otherParticipant) return;
+
+    setSending(true);
+    try {
+      const response = await post<Message>('/chat/send', {
+        content: newMessage,
+        senderId: currentUser.id,
+        receiverId: otherParticipant.id
+      });
+      
+      setMessages(prev => [...prev, response]);
+      setNewMessage('');
+    } catch (err: any) {
+      console.error('Failed to send message:', err);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const toggleProfileMenu = () => {
     setIsProfileMenuOpen(!isProfileMenuOpen);
@@ -120,10 +173,30 @@ const Chat = () => {
           <div className="self-center px-2 py-1 mx-0 my-1 text-sm text-white text-gray-700 bg-white border border-gray-200 rounded-full shadow rounded-tg">
             Chat started with {otherParticipant.firstName} {otherParticipant.lastName}
           </div>
+          
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.senderId === currentUser?.id ? 'justify-end' : 'justify-start'} mb-4`}
+            >
+              <div
+                className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                  message.senderId === currentUser?.id
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 text-gray-800'
+                }`}
+              >
+                <div className="text-sm">{message.content}</div>
+                <div className={`text-xs mt-1 ${message.senderId === currentUser?.id ? 'text-blue-100' : 'text-gray-500'}`}>
+                  {new Date(message.createdAt).toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Message input */}
-        <div className="relative flex items-center self-center w-full max-w-xl p-4 overflow-hidden text-gray-600 focus-within:text-gray-400">
+        <form onSubmit={handleSendMessage} className="relative flex items-center self-center w-full max-w-xl p-4 overflow-hidden text-gray-600 focus-within:text-gray-400">
           <div className="w-full">
             <span className="absolute inset-y-0 left-0 flex items-center pl-6">
               <button type="button" className="p-1 focus:outline-none focus:shadow-none">
@@ -132,18 +205,28 @@ const Chat = () => {
             </span>
             <input 
               type="text" 
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
               className="w-full py-2 pl-10 pr-12 text-sm bg-white border border-transparent appearance-none rounded-tg placeholder-gray-800 focus:bg-white focus:outline-none focus:border-blue-500 focus:text-gray-900 focus:shadow-outline-blue" 
               style={{borderRadius: 25}} 
               placeholder="Type a message..." 
               autoComplete="off" 
             />
             <span className="absolute inset-y-0 right-0 flex items-center pr-6">
-              <button type="submit" className="p-1 focus:outline-none focus:shadow-none hover:text-blue-500">
-                {renderIcon(FaPaperPlane,'w-4 h-4')}
+              <button 
+                type="submit" 
+                disabled={sending || !newMessage.trim()}
+                className="p-1 focus:outline-none focus:shadow-none hover:text-blue-500 disabled:opacity-50"
+              >
+                {sending ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                ) : (
+                  renderIcon(FaPaperPlane,'w-4 h-4')
+                )}
               </button>
             </span>
           </div>
-        </div>
+        </form>
       </div>
 
       {/* Profile Menu */}
