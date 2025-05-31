@@ -14,11 +14,16 @@ interface User {
   online?: boolean;
 }
 
-interface ChatResponse {
-  data: {
-    id: string;
-    participantId: string;
-  };
+interface Chat {
+  id: string;
+  participants: {
+    userId: string;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    }
+  }[];
 }
 
 interface NewChatProps {
@@ -56,9 +61,28 @@ const NewChat = ({ onClose }: NewChatProps) => {
     setError(null);
 
     try {
-      const response = await post<ChatResponse>('/chats', {
+      // First check if chat already exists
+      const existingChats = await get<{ data: Chat[] }>('/chat');
+      const existingChat = existingChats.data.find(chat => 
+        chat.participants.some(p => p.userId === userId)
+      );
+
+      if (existingChat) {
+        onClose();
+        setTimeout(() => {
+          navigate(`/chat/${existingChat.id}`, { replace: true });
+        }, 100);
+        return;
+      }
+
+      // If no existing chat, create new one
+      const response = await post<{ data: { id: string } }>('/chat/create', {
         participantId: userId
       });
+
+      if (!response.data?.id) {
+        throw new Error('Invalid response from server');
+      }
 
       onClose();
       setTimeout(() => {

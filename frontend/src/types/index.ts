@@ -7,6 +7,9 @@ export interface User {
   isVerified: boolean;
   status: string;
   lastSeen: string;
+  online?: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Message {
