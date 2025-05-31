@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FaSearch, FaBars, FaTimes, FaPlus } from 'react-icons/fa'
 import { renderIcon } from '../utils/icons';
+import NewChat from '../pages/chat/NewChat';
 
 interface MenuItem {
   id: string;
@@ -79,10 +80,11 @@ const LeftSidebar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<MenuItem[]>(menuItems);
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
 
   const handleChatClick = (chatId: string) => {
     navigate(`/chat/${chatId}`);
-    setIsMobileMenuOpen(false); // Close mobile menu after selection
+    setIsMobileMenuOpen(false);
   };
 
   const handleTabClick = (tabId: string) => {
@@ -100,6 +102,14 @@ const LeftSidebar = () => {
       user.lastMessage?.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredUsers(filtered);
+  };
+
+  const handleNewChatClick = () => {
+    setIsNewChatOpen(true);
+  };
+
+  const handleCloseNewChat = () => {
+    setIsNewChatOpen(false);
   };
 
   return (
@@ -215,7 +225,7 @@ const LeftSidebar = () => {
           {/* New Chat Button */}
           <div className="fixed absolute bottom-0 right-0 z-40 mb-6 mr-4">
             <button 
-              onClick={() => navigate('/new-chat')}
+              onClick={handleNewChatClick}
               className="flex items-center justify-center w-12 h-12 mr-3 text-xl font-semibold text-white bg-blue-500 rounded-full focus:outline-none flex-no-shrink hover:bg-blue-600 transition-colors"
             >
               {renderIcon(FaPlus, 'w-5 h-5')}
@@ -230,6 +240,23 @@ const LeftSidebar = () => {
           className="fixed inset-0 z-30 bg-black bg-opacity-50 md:hidden"
           onClick={toggleMobileMenu}
         />
+      )}
+
+      {/* New Chat Modal */}
+      {isNewChatOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl">
+            <div className="absolute top-0 right-0 p-4">
+              <button
+                onClick={handleCloseNewChat}
+                className="text-gray-400 hover:text-gray-500 focus:outline-none"
+              >
+                {renderIcon(FaTimes, 'w-5 h-5')}
+              </button>
+            </div>
+            <NewChat onClose={handleCloseNewChat} />
+          </div>
+        </div>
       )}
     </>
   )

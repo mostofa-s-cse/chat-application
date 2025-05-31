@@ -1,32 +1,33 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { post } from '../../utils/apiBase';
 import { FaEnvelope, FaLock, FaGoogle } from 'react-icons/fa';
-import { setAuth } from '../../store/slices/authSlice';
+import { setAuth, setLoading, setError } from '../../store/slices/authSlice';
 import { LoginResponse } from '../../types';
 import { toast } from 'react-toastify';
 import { renderIcon } from '../../utils/icons';
+import { RootState } from '../../store';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { loading, error } = useSelector((state: RootState) => state.auth);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    dispatch(setLoading(true));
     try {
       const response = await post<LoginResponse>('/auth/login', { email, password });
-      dispatch(setAuth({ user: response.data.user, token: response.data.accessToken }));
+      dispatch(setAuth(response.data));
       toast.success('Login successful!');
       navigate('/');
     } catch (err: any) {
-      toast.error(err.response?.message || 'Failed to login');
-    } finally {
-      setLoading(false);
+      const errorMessage = err.response?.data?.message || 'Failed to login';
+      dispatch(setError(errorMessage));
+      toast.error(errorMessage);
     }
   };
 
@@ -34,7 +35,9 @@ const Login: React.FC = () => {
     try {
       window.location.href = '/api/auth/google';
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to login with Google');
+      const errorMessage = err.response?.data?.message || 'Failed to login with Google';
+      dispatch(setError(errorMessage));
+      toast.error(errorMessage);
     }
   };
 
@@ -98,6 +101,12 @@ const Login: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="text-red-500 text-sm text-center">
+              {error}
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
+import { RootState } from '../../store/index';
 import { updateProfile } from '../../store/slices/authSlice';
 import { FaUserCircle, FaCamera } from 'react-icons/fa';
 import { renderIcon } from '../../utils/icons';
@@ -14,7 +14,8 @@ const Profile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<User>>({
-    username: user?.username || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
     email: user?.email || '',
   });
 
@@ -40,27 +41,27 @@ const Profile: React.FC = () => {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('avatar', file);
+    formData.append('profileImage', file);
 
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/users/avatar', {
+      const response = await fetch('/api/users/profile-image', {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload avatar');
+        throw new Error('Failed to upload profile image');
       }
 
       const data = await response.json();
-      dispatch(updateProfile({ avatar: data.avatar }));
-      setSuccess('Avatar updated successfully');
+      dispatch(updateProfile({ profileImage: data.profileImage }));
+      setSuccess('Profile image updated successfully');
     } catch (err: any) {
-      setError(err.message || 'Failed to update avatar');
+      setError(err.message || 'Failed to update profile image');
     } finally {
       setLoading(false);
     }
@@ -90,10 +91,10 @@ const Profile: React.FC = () => {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex items-center space-x-6">
           <div className="relative">
-            {user?.avatar ? (
+            {user?.profileImage ? (
               <img
-                src={user.avatar}
-                alt={user.username}
+                src={user.profileImage}
+                alt={`${user.firstName} ${user.lastName}`}
                 className="h-32 w-32 rounded-full object-cover"
               />
             ) : (
@@ -115,21 +116,37 @@ const Profile: React.FC = () => {
             </label>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">{user?.username}</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {user?.firstName} {user?.lastName}
+            </h2>
             <p className="text-gray-500">{user?.email}</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              Username
+            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+              First Name
             </label>
             <input
               type="text"
-              id="username"
-              name="username"
-              value={formData.username}
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+              Last Name
+            </label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
               onChange={handleInputChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />

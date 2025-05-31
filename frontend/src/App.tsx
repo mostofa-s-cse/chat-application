@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Provider, useSelector } from 'react-redux';
-import { store, RootState } from './store';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor, RootState } from './store';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -19,17 +20,22 @@ import Chat from './pages/chat/Chat';
 import GroupChat from './pages/chat/GroupChat';
 import Profile from './pages/profile/Profile';
 import Settings from './pages/settings/Settings';
-import NewChat from './pages/chat/NewChat';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const token = useSelector((state: RootState) => state.auth.token);
-  return token ? <>{children}</> : <Navigate to="/login" />;
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
+
+// Public Route Component (for auth pages)
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  return !isAuthenticated ? <>{children}</> : <Navigate to="/" />;
 };
 
 const router = createBrowserRouter([
   {
-    element: <AuthLayout />,
+    element: <PublicRoute><AuthLayout /></PublicRoute>,
     children: [
       { path: '/login', element: <Login /> },
       { path: '/register', element: <Register /> },
@@ -40,12 +46,11 @@ const router = createBrowserRouter([
   {
     element: <ProtectedRoute><MainLayout /></ProtectedRoute>,
     children: [
-      {path: '/', element: <Chat />},
+      { path: '/', element: <Chat /> },
       { path: '/chat/:chatId', element: <Chat /> },
       { path: '/group/:groupId', element: <GroupChat /> },
       { path: '/profile', element: <Profile /> },
       { path: '/settings', element: <Settings /> },
-      { path: '/new-chat', element: <NewChat /> },
       { path: '/new-group', element: <GroupChat /> },
     ],
   },
@@ -58,10 +63,12 @@ const router = createBrowserRouter([
 function App() {
   return (
     <Provider store={store}>
-      <div className="min-h-screen bg-gray-50">
-        <RouterProvider router={router} />
-        <ToastContainer position="top-right" aria-label="notification" />
-      </div>
+      <PersistGate loading={null} persistor={persistor}>
+        <div className="min-h-screen bg-gray-50">
+          <RouterProvider router={router} />
+          <ToastContainer position="top-right" aria-label="notification" />
+        </div>
+      </PersistGate>
     </Provider>
   );
 }

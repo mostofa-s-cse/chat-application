@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { store } from '../store';
+import { logout } from '../store/slices/authSlice';
+
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1',
   headers: {
@@ -31,20 +33,30 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (!refreshToken) {
-          throw new Error('No refresh token available');
+          store.dispatch(logout());
+          window.location.href = '/login';
+          return Promise.reject(error);
         }
-        const response = await axios.post('/auth/refresh-token', {
-          refreshToken,
-        });
+
+        const response = await axios.post(
+          `${process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1'}/auth/refresh-token`,
+          { refreshToken }
+        );
+
         const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+        
+        // Update localStorage
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', newRefreshToken);
+        
+        // Update request header
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        
         return api(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        store.dispatch({ type: 'auth/logout' });
+        // If refresh token fails, logout and redirect to login
+        store.dispatch(logout());
+        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }

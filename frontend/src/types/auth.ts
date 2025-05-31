@@ -9,20 +9,6 @@ export interface User {
   lastSeen: string;
 }
 
-export interface Message {
-  id: string;
-  content: string;
-  sender: User;
-  timestamp: string;
-}
-
-export interface Chat {
-  id: string;
-  otherParticipant: User;
-  lastMessage?: Message;
-  createdAt: string;
-}
-
 export interface LoginResponse {
   success: boolean;
   message: string;
@@ -52,3 +38,6 @@ export interface LoginRequest {
   email: string;
   password: string;
 }
+
+// Ensure this file is treated as a module
+export {}; 
