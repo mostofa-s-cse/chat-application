@@ -1,172 +1,123 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
-  // provider = "postgresql"
+  provider = "mysql" // or postgresql, sqlite, etc.
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id                String         @id @default(uuid())
-  email             String         @unique
-  password          String?
-  firstName         String
-  lastName          String
-  profileImage      String?
-  isVerified        Boolean        @default(false)
-  otp               String?
-  otpExpiry         DateTime?
-  googleId          String?        @unique
-  status            String         @default("OFFLINE")
-  lastSeen          DateTime       @default(now())
-  refreshToken      String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  // Relations
-  sentMessages      Message[]      @relation("SentMessages")
-  receivedMessages  Message[]      @relation("ReceivedMessages")
-  sentGroupMessages GroupMessage[]
-  groups            GroupMember[]
-  roles             Role[]         @relation("UserRoles")
-  permissions       Permission[]   @relation("UserPermissions")
-  refreshTokens     RefreshToken[]
-  chats             ChatParticipant[]
+  id                   Int                       @id @default(autoincrement())
+  firstName            String
+  lastName             String                    @unique
+  email                String?                   @unique
+  phone                String?                   @unique
+  avatar               String?
+  status               String?
+  createdAt            DateTime                  @default(now())
+  bio                  String?
+  lastSeen             DateTime?                 @default(now())
+  isVerified           Boolean                   @default(false)
+  otp                  String?
+  otpExpiry            DateTime?
+  googleId             String?                   @unique
+  refreshToken         String?
+  conversationsCreated Conversation[]            @relation("ConversationCreator")
+  participants         ConversationParticipant[]
+  sentMessages         Message[]                 @relation("MessageSender")
+  receivedStatuses     MessageStatus[]           @relation("StatusRecipient")
+  invitedGroups        GroupInvite[]             @relation("GroupInvited")
+  sentInvites          GroupInvite[]             @relation("GroupInviter")
+  callLogsInitiated    CallLog[]                 @relation("Caller")
+  callLogsReceived     CallLog[]                 @relation("Receiver")
+}
+
+model Conversation {
+  id        Int      @id @default(autoincrement())
+  isGroup   Boolean  @default(false)
+  name      String?
+  createdAt DateTime @default(now())
+
+  createdById  Int
+  createdBy    User                      @relation("ConversationCreator", fields: [createdById], references: [id])
+  participants ConversationParticipant[]
+  messages     Message[]
+  invites      GroupInvite[]
+}
+
+model ConversationParticipant {
+  id             Int          @id @default(autoincrement())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+  user           User         @relation(fields: [userId], references: [id])
+  userId         Int
+  role           String       @default("member")
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
 }
 
 model Message {
-  id         String   @id @default(uuid())
-  content    String
-  senderId   String
-  receiverId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             Int          @id @default(autoincrement())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id])
+  senderId       Int
+  messageType    String // "text", "image", etc.
+  content        String?
+  fileUrl        String?
+  createdAt      DateTime     @default(now())
+  replyTo        Message?     @relation("MessageReply", fields: [replyToId], references: [id])
+  replyToId      Int?
+  replies        Message[]    @relation("MessageReply")
 
-  // Relations
-  sender   User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
-
-  @@index([senderId])
-  @@index([receiverId])
+  statuses    MessageStatus[]
+  attachments Attachment[]
 }
 
-model Group {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model MessageStatus {
+  id          Int      @id @default(autoincrement())
+  message     Message  @relation(fields: [messageId], references: [id])
+  messageId   Int
+  recipient   User     @relation("StatusRecipient", fields: [recipientId], references: [id])
+  recipientId Int
+  status      String // "sent", "delivered", "seen"
+  updatedAt   DateTime @default(now())
 
-  // Relations
-  members  GroupMember[]
-  messages GroupMessage[]
+  @@unique([messageId, recipientId])
 }
 
-model GroupMember {
-  id        String   @id @default(uuid())
-  groupId   String
-  userId    String
-  role      String   @default("MEMBER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  group Group @relation(fields: [groupId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
-
-  @@unique([groupId, userId])
-  @@index([groupId])
-  @@index([userId])
+model Attachment {
+  id         Int      @id @default(autoincrement())
+  message    Message  @relation(fields: [messageId], references: [id])
+  messageId  Int
+  fileType   String
+  fileUrl    String
+  fileSize   Int
+  uploadedAt DateTime @default(now())
 }
 
-model GroupMessage {
-  id        String   @id @default(uuid())
-  content   String
-  groupId   String
-  senderId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  group  Group @relation(fields: [groupId], references: [id])
-  sender User  @relation(fields: [senderId], references: [id])
-
-  @@index([groupId])
-  @@index([senderId])
+model GroupInvite {
+  id             Int          @id @default(autoincrement())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+  invitedUser    User         @relation("GroupInvited", fields: [invitedUserId], references: [id])
+  invitedUserId  Int
+  invitedBy      User         @relation("GroupInviter", fields: [invitedById], references: [id])
+  invitedById    Int
+  status         String // "pending", "accepted", "rejected"
+  createdAt      DateTime     @default(now())
 }
 
-model Call {
-  id         String   @id @default(uuid())
-  callerId   String
-  receiverId String
-  duration   Int
-  type       String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-model File {
-  id         String   @id @default(uuid())
-  filename   String
-  path       String
-  senderId   String
-  receiverId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-model Role {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  description String?
-  users       User[]       @relation("UserRoles")
-  permissions Permission[] @relation("RolePermissions")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-}
-
-model Permission {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  users       User[]   @relation("UserPermissions")
-  roles       Role[]   @relation("RolePermissions")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-}
-
-model Chat {
-  id           String        @id @default(uuid())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  participants ChatParticipant[]
-}
-
-model ChatParticipant {
-  id        String   @id @default(uuid())
-  chatId    String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  chat      Chat     @relation(fields: [chatId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@unique([chatId, userId])
-  @@index([chatId])
-  @@index([userId])
+model CallLog {
+  id           Int      @id @default(autoincrement())
+  caller       User     @relation("Caller", fields: [callerId], references: [id])
+  callerId     Int
+  receiver     User     @relation("Receiver", fields: [receiverId], references: [id])
+  receiverId   Int
+  callType     String // "audio" or "video"
+  startedAt    DateTime
+  endedAt      DateTime
+  durationSecs Int
 }

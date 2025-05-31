@@ -1,53 +1,57 @@
-import { Request, Response } from 'express';
-import { createChat as createChatService, createMessage, fetchMessages, getChats as getChatsService, getChat as getChatService } from '../services/chatService';
-
-
-export const getChats = async (req: Request, res: Response) => {
-  const { userId } = req.body;
-  try {
-    const chats = await getChatsService(userId);
-    res.status(200).json(chats);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch chats' });
-  }
-};
-
-export const getChat = async (req: Request, res: Response) => {
-  const { chatId } = req.params;
-  try {
-    const chat = await getChatService(chatId);
-    res.status(200).json(chat);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch chat' });
-  }
-};
-
-export const createChat = async (req: Request, res: Response) => {
-  const { participantId } = req.body;
-  try {
-    const chat = await createChatService(participantId);
-    res.status(201).json(chat);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create chat' });
-  }
-};
+import { Request, Response } from "express";
+import {
+  assignUserToChat,
+  createGroupConversation,
+  createMessage,
+  fetchMessages,
+} from "../services/chatService";
 
 export const sendMessage = async (req: Request, res: Response) => {
-  const { content, senderId, receiverId } = req.body;
+  const { content, senderId, conversationId, messageType, fileUrl } = req.body;
   try {
-    const message = await createMessage(content, senderId, receiverId);
+    const message = await createMessage(
+      content,
+      senderId,
+      conversationId,
+      messageType,
+      fileUrl
+    );
     res.status(201).json(message);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to send message' });
+    res.status(500).json({ error: "Failed to send message" });
   }
 };
 
 export const getMessages = async (req: Request, res: Response) => {
-  const { senderId, receiverId } = req.query;
+  const { conversationId } = req.query;
   try {
-    const messages = await fetchMessages(senderId as string, receiverId as string);
+    const messages = await fetchMessages(Number(conversationId));
     res.status(200).json(messages);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch messages' });
+    res.status(500).json({ error: "Failed to fetch messages" });
   }
-}; 
+};
+
+export const addUserToChat = async (req: Request, res: Response) => {
+  const { userId, conversationId } = req.body;
+  try {
+    const participant = await assignUserToChat(userId, conversationId);
+    res.status(201).json(participant);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add user to chat" });
+  }
+};
+
+export const createGroupChat = async (req: Request, res: Response) => {
+  const { name, createdById, participantIds } = req.body;
+  try {
+    const groupChat = await createGroupConversation(
+      name,
+      createdById,
+      participantIds
+    );
+    res.status(201).json(groupChat);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create group chat" });
+  }
+};
