@@ -38,7 +38,7 @@ export const loginLimiter = rateLimit({
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://192.168.0.104:3000'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
