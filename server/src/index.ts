@@ -118,7 +118,7 @@ io.on('connection', (socket: CustomSocket) => {
   // Handle new messages
   socket.on('new message', async (newMessageReceived: MessageData) => {
     try {
-      console.log('Received message:', newMessageReceived); // Debug log
+      // console.log('Received message:', newMessageReceived); 
       
       if (!newMessageReceived?.chatId) {
         throw new Error('Chat ID is required');
