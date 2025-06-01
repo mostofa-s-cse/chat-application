@@ -1,172 +1,52 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
-  // provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id                String         @id @default(uuid())
-  email             String         @unique
-  password          String?
-  firstName         String
-  lastName          String
-  profileImage      String?
-  isVerified        Boolean        @default(false)
-  otp               String?
-  otpExpiry         DateTime?
-  googleId          String?        @unique
-  status            String         @default("OFFLINE")
-  lastSeen          DateTime       @default(now())
-  refreshToken      String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  // Relations
-  sentMessages      Message[]      @relation("SentMessages")
-  receivedMessages  Message[]      @relation("ReceivedMessages")
-  sentGroupMessages GroupMessage[]
-  groups            GroupMember[]
-  roles             Role[]         @relation("UserRoles")
-  permissions       Permission[]   @relation("UserPermissions")
-  refreshTokens     RefreshToken[]
-  chats             ChatParticipant[]
-}
-
-model Message {
-  id         String   @id @default(uuid())
-  content    String
-  senderId   String
-  receiverId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relations
-  sender   User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
-
-  @@index([senderId])
-  @@index([receiverId])
-}
-
-model Group {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  members  GroupMember[]
-  messages GroupMessage[]
-}
-
-model GroupMember {
-  id        String   @id @default(uuid())
-  groupId   String
-  userId    String
-  role      String   @default("MEMBER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  group Group @relation(fields: [groupId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
-
-  @@unique([groupId, userId])
-  @@index([groupId])
-  @@index([userId])
-}
-
-model GroupMessage {
-  id        String   @id @default(uuid())
-  content   String
-  groupId   String
-  senderId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  group  Group @relation(fields: [groupId], references: [id])
-  sender User  @relation(fields: [senderId], references: [id])
-
-  @@index([groupId])
-  @@index([senderId])
-}
-
-model Call {
-  id         String   @id @default(uuid())
-  callerId   String
-  receiverId String
-  duration   Int
-  type       String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-model File {
-  id         String   @id @default(uuid())
-  filename   String
-  path       String
-  senderId   String
-  receiverId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-model Role {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  description String?
-  users       User[]       @relation("UserRoles")
-  permissions Permission[] @relation("RolePermissions")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-}
-
-model Permission {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  users       User[]   @relation("UserPermissions")
-  roles       Role[]   @relation("RolePermissions")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id         String    @id @default(uuid())
+  firstName       String
+  lastName       String
+  email      String    @unique
+  password   String
+  bio        String    @default("Available")
+  profilePic String    @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+  contacts   User[]    @relation("UserContacts")
+  contactsOf User[]    @relation("UserContacts")
+  chats      Chat[]    @relation("ChatUsers")
+  messages   Message[]
+  groupAdmin Chat[]    @relation("GroupAdmin")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Chat {
-  id           String        @id @default(uuid())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  participants ChatParticipant[]
+  id            String    @id @default(uuid())
+  photo         String    @default("https://cdn-icons-png.flaticon.com/512/9790/9790561.png")
+  chatName      String?
+  isGroup       Boolean   @default(false)
+  users         User[]    @relation("ChatUsers")
+  messages      Message[]
+  latestMessage Message?  @relation("LatestMessage", fields: [latestMessageId], references: [id])
+  latestMessageId String? @unique
+  groupAdmin    User?     @relation("GroupAdmin", fields: [groupAdminId], references: [id])
+  groupAdminId  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
-model ChatParticipant {
+model Message {
   id        String   @id @default(uuid())
+  content   String
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  String
+  chat      Chat     @relation(fields: [chatId], references: [id])
   chatId    String
-  userId    String
+  latestFor Chat?    @relation("LatestMessage")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  chat      Chat     @relation(fields: [chatId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@unique([chatId, userId])
-  @@index([chatId])
-  @@index([userId])
-}
+} 

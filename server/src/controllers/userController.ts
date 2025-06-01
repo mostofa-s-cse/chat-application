@@ -1,165 +1,249 @@
-import { Request, Response, NextFunction } from 'express';
-import {
-  createUser,
-  getUserById,
-  searchUsers,
-  updateUser,
-  deleteUser,
-  getAllUsers,
-} from '../services/userService';
-import { AppError } from '../middleware/errorHandler';
-import { PrismaClient } from '@prisma/client';
+import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
+import jwt from 'jsonwebtoken';
+import prisma from '../utils/prisma.ts';
 
-const prisma = new PrismaClient();
+interface AuthRequest extends Request {
+  rootUserId?: string;
+  token?: string;
+  rootUser?: any;
+}
 
-export const createUserController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const register = async (req: Request, res: Response): Promise<void> => {
+  const { firstName, lastName, email, password } = req.body;
   try {
-    // Create user data object
-    const userData = {
-      ...req.body,
-      profileImage: req.file ? `/uploads/profiles/${req.file.filename}` : null
-    };
-
-    const user = await createUser(userData);
-    res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      data: user
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getUsers = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const result = await getAllUsers(req);
-    res.status(200).json({
-      success: true,
-      message: 'Users retrieved successfully',
-      data: result.data,
-      pagination: result.pagination
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { id } = req.params;
-    const user = await getUserById(id);
-    res.status(200).json({
-      success: true,
-      message: 'User retrieved successfully',
-      data: user
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const searchUsersController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { query } = req.query;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    if (!query) {
-      throw new AppError('Search query is required', 400);
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      res.status(400).json({ error: 'User already Exists' });
+      return;
     }
 
-    const result = await searchUsers(query as string, page, limit);
-    res.status(200).json({
-      success: true,
-      message: 'Users search completed',
-      ...result
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const token = jwt.sign({ email }, process.env.SECRET!, { expiresIn: '24h' });
+
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName
+      }
     });
+
+    res.json({ message: 'success', token });
   } catch (error) {
-    next(error);
+    console.error('Error in register:', error);
+    res.status(500).send(error);
   }
 };
 
-export const updateUserController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const login = async (req: Request, res: Response): Promise<void> => {
+  const { email, password } = req.body;
   try {
-    const { id } = req.params;
-    const updateData = { ...req.body };
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      res.status(200).json({ message: 'User does not exist' });
+      return;
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      res.status(200).json({ message: 'Invalid Credentials' });
+      return;
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.SECRET!, { expiresIn: '24h' });
     
-    // Handle file upload if present
-    if (req.file) {
-      updateData.profileImage = `/uploads/profiles/${req.file.filename}`;
+    res.cookie('userToken', token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    
+    res.status(200).json({ token, status: 200 });
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+};
+
+export const validUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.rootUserId) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
     }
 
-    const updatedUser = await updateUser(id, updateData);
-    res.status(200).json({
-      success: true,
-      message: 'User updated successfully',
-      data: updatedUser
+    const validUser = await prisma.user.findUnique({
+      where: { id: req.rootUserId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        bio: true,
+        profilePic: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    if (!validUser) {
+      res.json({ message: 'user is not valid' });
+      return;
+    }
+
+    res.status(201).json({
+      user: validUser,
+      token: req.token,
     });
   } catch (error) {
-    next(error);
+    console.error(error);
+    res.status(500).json({ error });
   }
 };
 
-export const deleteUserController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const googleAuth = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
-    await deleteUser(id);
-    res.status(200).json({
-      success: true,
-      message: 'User deleted successfully'
+    if (!process.env.CLIENT_ID) {
+      throw new Error('CLIENT_ID environment variable is not set');
+    }
+
+    const { tokenId } = req.body;
+    const client = new OAuth2Client(process.env.CLIENT_ID);
+    const verify = await client.verifyIdToken({
+      idToken: tokenId,
+      audience: process.env.CLIENT_ID,
     });
+
+    const { email_verified, email, name, picture } = verify.getPayload()!;
+    if (!email_verified || !email || !name) {
+      res.json({ message: 'Invalid Google Account' });
+      return;
+    }
+
+    const userExist = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        bio: true,
+        profilePic: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    if (userExist) {
+      res.cookie('userToken', tokenId, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+      res.status(200).json({ token: tokenId, user: userExist });
+      return;
+    }
+
+    const password = email + process.env.CLIENT_ID;
+    const hashedPassword = await bcrypt.hash(password, 12);
+    
+    const newUser = await prisma.user.create({
+      data: {
+        firstName: name as string,
+        lastName: name as string,
+        profilePic: picture,
+        password: hashedPassword,
+        email: email as string,
+      }
+    });
+
+    res.cookie('userToken', tokenId, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({ message: 'User registered Successfully', token: tokenId });
   } catch (error) {
-    next(error);
+    console.error('error in googleAuth backend:', error);
+    res.status(500).json({ error });
   }
 };
 
-export const updateUserStatus = async (req: Request, res: Response) => {
-  const { userId, status } = req.body;
+export const searchUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: { status }
+    const search = req.query.search as string;
+    const users = await prisma.user.findMany({
+      where: {
+        AND: [
+          { id: { not: req.rootUserId } },
+          {
+            OR: [
+              { firstName: { contains: search.toLowerCase() } },
+              { lastName: { contains: search.toLowerCase() } },
+              { email: { contains: search.toLowerCase() } }
+            ]
+          }
+        ]
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        bio: true,
+        profilePic: true,
+        createdAt: true,
+        updatedAt: true
+      }
     });
-    res.status(200).json(user);
+    res.status(200).send(users);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update user status' });
+    res.status(500).send(error);
   }
 };
 
-export const getUserStatus = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+export const getUserById = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { status: true }
+    const selectedUser = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        bio: true,
+        profilePic: true,
+        createdAt: true,
+        updatedAt: true
+      }
     });
-    res.status(200).json(user);
+    res.status(200).json(selectedUser);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch user status' });
+    res.status(500).json({ error });
+  }
+};
+
+export const updateInfo = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { bio, firstName, lastName } = req.body;
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { firstName, lastName, bio },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        bio: true,
+        profilePic: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error });
   }
 }; 

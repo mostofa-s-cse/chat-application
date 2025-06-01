@@ -1,94 +1,89 @@
-import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AppError } from './errorHandler';
-import { PrismaClient } from '@prisma/client';
-import { logToFile } from '../utils/logger';
-
-const prisma = new PrismaClient();
+import { Request, Response, NextFunction } from 'express';
+import prisma from '../utils/prisma.ts';
 
 interface JwtPayload {
   id: string;
+  email: string;
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-    }
-  }
+interface AuthRequest extends Request {
+  token?: string;
+  rootUser?: any;
+  rootUserId?: string;
+  rootUserEmail?: string;
 }
 
-export const protect = async (
-  req: Request,
-  _: Response,
+export const Auth = async (
+  req: AuthRequest,
+  res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    // 1) Get token and check if it exists
-    let token;
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
-      token = req.headers.authorization.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      res.status(401).json({ error: 'No authorization header' });
+      return;
     }
 
-    if (!token) {
-      return next(new AppError('You are not logged in', 401));
-    }
+    let token = authHeader.split(' ')[0]; // browser
+    // let token = authHeader.split(' ')[1]; // Postman
 
-    // 2) Verify token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_ACCESS_SECRET!
-    ) as JwtPayload;
+    if (token.length < 500) {
+      const verifiedUser = jwt.verify(token, process.env.SECRET!) as JwtPayload;
+      const rootUser = await prisma.user.findUnique({
+        where: { id: verifiedUser.id },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          bio: true,
+          profilePic: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
 
-    // 3) Check if user still exists
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-    });
-
-    if (!user) {
-      return next(new AppError('User no longer exists', 401));
-    }
-
-    // 4) Check if user has any valid refresh tokens
-    const hasValidToken = await prisma.refreshToken.findFirst({
-      where: { 
-        userId: user.id,
-        expiresAt: { gt: new Date() }
+      if (!rootUser) {
+        res.status(401).json({ error: 'User not found' });
+        return;
       }
-    });
 
-    if (!hasValidToken) {
-      return next(new AppError('Session expired, please login again', 401));
+      req.token = token;
+      req.rootUser = rootUser;
+      req.rootUserId = rootUser.id;
+    } else {
+      const data = jwt.decode(token) as JwtPayload;
+      req.rootUserEmail = data.email;
+
+      const googleUser = await prisma.user.findUnique({
+        where: { email: req.rootUserEmail },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          bio: true,
+          profilePic: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      if (!googleUser) {
+        res.status(401).json({ error: 'User not found' });
+        return;
+      }
+
+      req.rootUser = googleUser;
+      req.token = token;
+      req.rootUserId = googleUser.id;
     }
 
-    // Grant access to protected route
-    req.user = user;
-    logToFile('auth', `User authenticated successfully (ID: ${decoded.id})`);
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return next(new AppError('Invalid token, please login again', 401));
-    }
-    next(error);
+    console.error('Auth middleware error:', error);
+    res.status(401).json({ error: 'Invalid Token' });
   }
 };
-
-export const restrictTo = (...roles: string[]) => {
-  return (req: Request, _: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
-    }
-
-    const userRoles = (req.user as any).roles.map((role: any) => role.name);
-    
-    if (!roles.some(role => userRoles.includes(role))) {
-      return next(
-        new AppError('You do not have permission to perform this action', 403)
-      );
-    }
-    next();
-  };
-}; 
