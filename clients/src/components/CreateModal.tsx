@@ -24,7 +24,7 @@ const suggestedUsers = [
   },
 ];
 
-const CreateModal = () => {
+const CreateModal = ({ onClose }: { onClose: () => void }) => {
   const [search, setSearch] = useState('');
   const filteredUsers = search
     ? suggestedUsers.filter(user => user.name.toLowerCase().includes(search.toLowerCase()))
@@ -33,13 +33,21 @@ const CreateModal = () => {
   return (
     <div className="w-full max-w-md rounded-3xl bg-white">
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 rounded-t-3xl">
-        <button className="text-blue-600 text-base font-normal">
+        <button className="text-blue-600 text-base font-normal" onClick={onClose}>
           Cancel
         </button>
         <h1 className="font-extrabold text-lg">
           New message
         </h1>
-        <div className="w-16"></div>
+        
+        <button
+              className="top-2 right-0 text-gray-400 hover:text-gray-700 text-2xl font-bold"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              ×
+            </button>
+       
       </header>
       <div className="bg-gray-50">
         <div className="px-4 py-3 border-b">
@@ -90,7 +98,7 @@ const CreateModal = () => {
             filteredUsers.map((user, idx) => (
               <li
                 key={user.name}
-                className={`flex items-center gap-4 px-4 py-3 border-t border-gray-200${idx === filteredUsers.length - 1 ? ' rounded-b-3xl' : ''}`}
+                className={`flex items-center gap-4 px-4 py-3 cursor-pointer border-t border-gray-200${idx === filteredUsers.length - 1 ? ' rounded-b-3xl' : ''}`}
               >
                 <img
                   alt={user.alt}

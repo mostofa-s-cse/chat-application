@@ -234,15 +234,8 @@ const LeftSidebar = () => {
       </nav>
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="relative w-full max-w-lg">
-            <CreateModal />
-            <button
-              className="absolute top-2 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold"
-              onClick={() => setShowCreateModal(false)}
-              aria-label="Close modal"
-            >
-              ×
-            </button>
+          <div className="w-full max-w-lg">
+            <CreateModal onClose={() => setShowCreateModal(false)} />
           </div>
         </div>
       )}
