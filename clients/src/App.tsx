@@ -4,6 +4,8 @@ import LeftSidebar from './components/LeftSidebar';
 import Chat from './components/Chat';
 import Video from './components/call/Video';
 import Audio from './components/call/Audio';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 
 const App: React.FC = () => {
   return (
@@ -14,7 +16,9 @@ const App: React.FC = () => {
         <Chat />
        </div> */}
        {/* <Video /> */}
-       <Audio />
+       {/* <Audio /> */}
+       {/* <Login /> */}
+       <Register />
       </div>
     </Layout>
   );
