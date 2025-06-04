@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { FaUsers, FaCommentAlt, FaChevronRight } from 'react-icons/fa';
+import CreateGroupModal from './CreateGroupModal';
+import CreateCommunityModal from './CreateCommunityModal';
 
 const suggestedUsers = [
   {
@@ -26,9 +28,17 @@ const suggestedUsers = [
 
 const CreateModal = ({ onClose }: { onClose: () => void }) => {
   const [search, setSearch] = useState('');
+  const [openModal, setOpenModal] = useState<'group' | 'community' | null>(null);
   const filteredUsers = search
     ? suggestedUsers.filter(user => user.name.toLowerCase().includes(search.toLowerCase()))
     : suggestedUsers;
+
+  if (openModal === 'group') {
+    return <CreateGroupModal onClose={() => setOpenModal(null)} />;
+  }
+  if (openModal === 'community') {
+    return <CreateCommunityModal onClose={() => setOpenModal(null)} />;
+  }
 
   return (
     <div className="w-full max-w-md rounded-3xl bg-white">
@@ -70,14 +80,14 @@ const CreateModal = ({ onClose }: { onClose: () => void }) => {
         {search.trim() === '' && (
             <>
           <div className="divide-y divide-gray-200">
-            <button className="flex items-center gap-4 px-4 py-4 w-full text-black font-semibold text-base" type="button">
+            <button className="flex items-center gap-4 px-4 py-4 w-full text-black font-semibold text-base" type="button" onClick={() => setOpenModal('group')}>
               <div className="bg-gray-200 rounded-full w-12 h-12 flex justify-center items-center">
                 <FaUsers className="text-black text-xl" />
               </div>
               Create a new group
               <FaChevronRight className="ml-auto text-gray-400" />
             </button>
-            <button className="flex items-center gap-4 px-4 py-4 w-full text-black font-semibold text-base" type="button">
+            <button className="flex items-center gap-4 px-4 py-4 w-full text-black font-semibold text-base" type="button" onClick={() => setOpenModal('community')}>
               <div className="bg-gray-200 rounded-full w-12 h-12 flex justify-center items-center">
                 <FaCommentAlt className="text-black text-xl" />
               </div>
