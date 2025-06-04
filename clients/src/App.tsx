@@ -8,21 +8,23 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
+import CreateModal from './components/CreateModal';
 
 const App: React.FC = () => {
   return (
     <Layout>
       <div className="h-full bg-gradient-to-br from-blue-100 to-indigo-200 overflow-hidden">
-       {/* <div className="flex">
+       <div className="flex">
         <LeftSidebar />
         <Chat />
-       </div> */}
+       </div>
        {/* <Video /> */}
        {/* <Audio /> */}
        {/* <Login /> */}
        {/* <Register /> */}
        {/* <ForgotPassword /> */}
-       <ResetPassword />
+       {/* <ResetPassword /> */}
+       {/* <CreateModal/> */}
       </div>
     </Layout>
   );

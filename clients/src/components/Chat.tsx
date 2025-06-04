@@ -1,5 +1,5 @@
 import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload } from 'react-icons/fa';
-
+import { HiDotsVertical } from 'react-icons/hi';
 interface Message {
     id: number;
     type: 'timestamp' | 'incoming' | 'outgoing' | 'file';
@@ -170,10 +170,13 @@ const Chat = () => {
         </div>
         <div className="flex items-center space-x-3">
           <button aria-label="Call" className="text-gray-600 text-xl leading-none hover:text-gray-900">
-            <FaPhone />
+            <FaPhone className='text-gray-600 w-6 h-6'/>
           </button>
           <button aria-label="Video call" className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl hover:bg-blue-700">
             <FaVideo className='text-white w-4 h-4' />
+          </button>
+          <button aria-label="Call" className="text-gray-600 text-xl leading-none hover:text-gray-900">
+          <HiDotsVertical className='text-gray-600 w-6 h-6'/>
           </button>
         </div>
       </header>

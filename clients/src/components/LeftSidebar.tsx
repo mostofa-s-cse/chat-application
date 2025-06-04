@@ -1,4 +1,6 @@
+import React, { useState } from 'react';
 import { FaEllipsisH, FaCamera, FaPlus, FaSearch, FaArchive, FaCheckDouble, FaCheck, FaBolt, FaUsers, FaComment, FaPhone, FaCog } from 'react-icons/fa';
+import CreateModal from './CreateModal';
 
 const getTimeColor = (unread: number) => unread > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400';
 
@@ -119,6 +121,7 @@ const chatData = [
     }
   ];
 const LeftSidebar = () => {
+  const [showCreateModal, setShowCreateModal] = useState(false);
   return (
     <section aria-label="Chat list panel" className="bg-white w-full max-w-[380px] flex flex-col shadow-lg h-screen">
       {/* Top bar */}
@@ -134,7 +137,11 @@ const LeftSidebar = () => {
           <button aria-label="Camera" className="text-gray-600 text-xl leading-none hover:text-gray-900">
             <FaCamera />
           </button>
-          <button aria-label="Add new chat" className="bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-xl hover:bg-blue-700">
+          <button
+            aria-label="Add new chat"
+            className="bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-xl hover:bg-blue-700"
+            onClick={() => setShowCreateModal(true)}
+          >
             <FaPlus className='text-white w-4 h-4' />
           </button>
         </div>
@@ -225,6 +232,20 @@ const LeftSidebar = () => {
           <span>Settings</span>
         </button>
       </nav>
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="relative w-full max-w-lg">
+            <CreateModal />
+            <button
+              className="absolute top-2 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold"
+              onClick={() => setShowCreateModal(false)}
+              aria-label="Close modal"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
