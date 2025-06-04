@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import LeftSidebar from './components/LeftSidebar';
 import Chat from './components/Chat';
 import Video from './components/call/Video';
+import Audio from './components/call/Audio';
 
 const App: React.FC = () => {
   return (
@@ -12,7 +13,8 @@ const App: React.FC = () => {
         <LeftSidebar />
         <Chat />
        </div> */}
-       <Video />
+       {/* <Video /> */}
+       <Audio />
       </div>
     </Layout>
   );
