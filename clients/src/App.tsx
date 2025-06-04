@@ -6,6 +6,8 @@ import Video from './components/call/Video';
 import Audio from './components/call/Audio';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 
 const App: React.FC = () => {
   return (
@@ -18,7 +20,9 @@ const App: React.FC = () => {
        {/* <Video /> */}
        {/* <Audio /> */}
        {/* <Login /> */}
-       <Register />
+       {/* <Register /> */}
+       {/* <ForgotPassword /> */}
+       <ResetPassword />
       </div>
     </Layout>
   );
