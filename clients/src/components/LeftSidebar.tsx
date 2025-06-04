@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { FaEllipsisH, FaCamera, FaPlus, FaSearch, FaArchive, FaCheckDouble, FaCheck, FaBolt, FaUsers, FaComment, FaPhone, FaCog } from 'react-icons/fa';
+import { FaEllipsisH, FaCamera, FaPlus, FaSearch, FaArchive, FaCheckDouble, FaUsers, FaComment, FaPhone, FaCog } from 'react-icons/fa';
 import CreateModal from './CreateModal';
+import { useState } from 'react';
 
 const getTimeColor = (unread: number) => unread > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400';
 
