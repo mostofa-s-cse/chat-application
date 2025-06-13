@@ -1,4 +1,5 @@
 import { FaEllipsisH, FaCamera, FaPlus, FaSearch, FaArchive, FaCheckDouble, FaUsers, FaComment, FaPhone, FaCog } from 'react-icons/fa';
+import { IoChatbubbleEllipses } from "react-icons/io5";
 import CreateModal from './CreateModal';
 import { useState } from 'react';
 
@@ -130,8 +131,8 @@ const LeftSidebar = () => {
           <FaEllipsisH />
         </button>
         <div className="flex items-center space-x-2">
-          <img alt="Chatterly logo icon" className="w-7 h-7" height={28} src="https://storage.googleapis.com/a1aa/image/1d16d306-f2c1-4399-f608-af7a37d4d995.jpg" width={28} />
-          <span className="font-semibold text-gray-800 text-lg select-none">Chatterly</span>
+          <IoChatbubbleEllipses className="text-2xl" />
+          <span className="font-semibold text-gray-800 text-lg select-none">Synchat</span>
         </div>
         <div className="flex items-center space-x-3">
           <button aria-label="Camera" className="text-gray-600 text-xl leading-none hover:text-gray-900">
@@ -150,7 +151,7 @@ const LeftSidebar = () => {
       <div className="px-5 py-3">
         <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 text-gray-400 text-sm">
           <FaSearch className="mr-2" />
-          <input aria-label="Search chats or ask Chatterly AI" className="bg-transparent focus:outline-none w-full text-xs placeholder-gray-400" placeholder="Ask Chatterly AI Or Search" type="search" />
+          <input aria-label="Search chats or ask Synchat AI" className="bg-transparent focus:outline-none w-full text-xs placeholder-gray-400" placeholder="Ask Synchat AI Or Search" type="search" />
         </div>
       </div>
       {/* Archive Chat label */}
