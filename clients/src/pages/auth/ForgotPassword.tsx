@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Forgot = () => {
   const [email, setEmail] = useState("");
@@ -33,7 +34,7 @@ const Forgot = () => {
         </form>
         <p className="text-center text-gray-500 text-sm mt-8">
           Remember your password?{' '}
-          <a href="/auth/Login" className="text-blue-600 hover:underline font-medium">Sign in</a>
+          <Link to="/login" className="text-blue-600 hover:underline font-medium">Sign in</Link>
         </p>
       </div>
     </div>

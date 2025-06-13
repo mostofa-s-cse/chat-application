@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineGoogle } from "react-icons/ai";
+import { Link } from "react-router-dom";
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -64,9 +65,9 @@ const Login = () => {
               <span className="ml-2 text-gray-700">Remember me</span>
             </label>
             <div className="text-sm">
-              <a href="#" className="font-medium text-blue-600 hover:underline">
+              <Link to="/forgot-password" className="font-medium text-blue-600 hover:underline">
                 Forgot password?
-              </a>
+              </Link>
             </div>
           </div>
           <button

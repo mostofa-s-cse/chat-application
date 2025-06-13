@@ -212,7 +212,7 @@ const LeftSidebar = () => {
         ))}
       </ul>
       {/* Bottom navigation */}
-      <nav aria-label="Bottom navigation" className="flex justify-between items-center border-t border-gray-200 px-5 pb-8 pt-4 text-xs text-gray-500 select-none">
+      <nav aria-label="Bottom navigation" className="flex justify-between items-center border-t border-gray-200 px-5 pb-3 pt-4 text-xs text-gray-500 select-none">
       <button className="flex flex-col items-center space-y-1 text-black font-semibold">
           <FaComment className="text-lg" />
           <span>Chat</span>

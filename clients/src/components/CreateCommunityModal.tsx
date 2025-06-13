@@ -67,16 +67,16 @@ const CreateCommunityModal = ({ onClose }: { onClose: () => void }) => {
           <ul className="max-h-40 overflow-y-auto divide-y divide-gray-200">
             {filteredUsers.length > 0 ? (
               filteredUsers.map(user => (
-                <li key={user.name} className="flex items-center gap-3 py-2 cursor-pointer" onClick={() => toggleUser(user.name)}>
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.includes(user.name)}
-                    onChange={() => toggleUser(user.name)}
-                    className="accent-blue-600"
-                    onClick={e => e.stopPropagation()}
-                  />
+                <li 
+                  key={user.name} 
+                  onClick={() => toggleUser(user.name)}
+                  className={`flex items-center gap-3 py-2 px-3 cursor-pointer transition-colors duration-200
+                    ${selectedUsers.includes(user.name) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                >
                   <img src={user.avatar} alt={user.alt} className="w-8 h-8 rounded-full object-cover" />
-                  <span className="text-black text-base">{user.name}</span>
+                  <span className={`text-base ${selectedUsers.includes(user.name) ? 'text-blue-600 font-semibold' : 'text-black'}`}>
+                    {user.name}
+                  </span>
                 </li>
               ))
             ) : (

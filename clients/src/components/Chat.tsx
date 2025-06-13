@@ -1,5 +1,6 @@
 import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload } from 'react-icons/fa';
 import { HiDotsVertical } from 'react-icons/hi';
+import LeftSidebar from './LeftSidebar';
 interface Message {
     id: number;
     type: 'timestamp' | 'incoming' | 'outgoing' | 'file';
@@ -154,6 +155,8 @@ const Chat = () => {
       };
 
   return (
+    <div className='flex'>
+    <LeftSidebar />
     <section aria-label="Chat conversation panel" className="bg-white w-full flex flex-col shadow-lg relative h-screen">
       {/* Top bar */}
       <header className="flex items-center justify-between px-5 py-2 border-b border-gray-200 flex-shrink-0">
@@ -206,6 +209,7 @@ const Chat = () => {
         </form>
       </footer>
     </section>
+    </div>
   );
 };
 
