@@ -1,7 +1,8 @@
-import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload, FaReply, FaFile, FaTrash, FaPause, FaPlay } from 'react-icons/fa';
+import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload, FaReply, FaFile, FaTrash, FaPause, FaPlay, FaTimes, FaEdit, FaEllipsisV } from 'react-icons/fa';
 import { HiDotsVertical } from 'react-icons/hi';
 import { BsEmojiSmile } from "react-icons/bs";
 import LeftSidebar from './LeftSidebar';
+import ProfileModal from './ProfileModal';
 import { useState, useEffect, useRef } from 'react';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
@@ -107,6 +108,7 @@ const Chat = () => {
     const [isPaused, setIsPaused] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [showProfile, setShowProfile] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const uploadMenuRef = useRef<HTMLDivElement>(null);
@@ -470,8 +472,12 @@ const Chat = () => {
           <button aria-label="Video call" className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl hover:bg-blue-700">
             <FaVideo className='text-white w-4 h-4' />
           </button>
-          <button aria-label="Call" className="text-gray-600 text-xl leading-none hover:text-gray-900">
-          <HiDotsVertical className='text-gray-600 w-6 h-6'/>
+          <button 
+            aria-label="Profile" 
+            className="text-gray-600 text-xl leading-none hover:text-gray-900"
+            onClick={() => setShowProfile(true)}
+          >
+            <FaEllipsisV className='text-gray-600 w-6 h-6'/>
           </button>
         </div>
       </header>
@@ -592,6 +598,7 @@ const Chat = () => {
         )}
       </footer>
     </section>
+    <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
     </div>
   );
 };

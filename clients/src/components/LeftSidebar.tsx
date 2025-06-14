@@ -135,9 +135,6 @@ const LeftSidebar = () => {
           <span className="font-semibold text-gray-800 text-lg select-none">Synchat</span>
         </div>
         <div className="flex items-center space-x-3">
-          <button aria-label="Camera" className="text-gray-600 text-xl leading-none hover:text-gray-900">
-            <FaCamera />
-          </button>
           <button
             aria-label="Add new chat"
             className="bg-blue-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-xl hover:bg-blue-700"
