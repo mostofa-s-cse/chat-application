@@ -3,6 +3,8 @@ import { IoChatbubbleEllipses } from "react-icons/io5";
 import CreateModal from './CreateModal';
 import CallLogs from './CallLogs';
 import CallModal from './CallModal';
+import Settings from './Settings';
+import Community from './Community';
 import { useState } from 'react';
 
 const getTimeColor = (unread: number) => unread > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400';
@@ -127,6 +129,8 @@ const LeftSidebar = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCallLogs, setShowCallLogs] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showCommunity, setShowCommunity] = useState(false);
   const [callType, setCallType] = useState<'audio' | 'video'>('audio');
   const [selectedContact, setSelectedContact] = useState<{ name: string; avatar: string } | null>(null);
 
@@ -139,7 +143,11 @@ const LeftSidebar = () => {
 
   return (
     <section aria-label="Chat list panel" className="bg-white w-full max-w-[380px] flex flex-col shadow-lg h-screen">
-      {showCallLogs ? (
+      {showSettings ? (
+        <Settings onBack={() => setShowSettings(false)} />
+      ) : showCommunity ? (
+        <Community onBack={() => setShowCommunity(false)} />
+      ) : showCallLogs ? (
         <CallLogs 
           onBack={() => setShowCallLogs(false)} 
           onCall={handleCall}
@@ -236,7 +244,10 @@ const LeftSidebar = () => {
               <FaComment className="text-lg" />
               <span>Chat</span>
             </button>
-            <button className="flex flex-col items-center space-y-1">
+            <button 
+              className="flex flex-col items-center space-y-1"
+              onClick={() => setShowCommunity(true)}
+            >
               <FaUsers className="text-lg" />
               <span>Community</span>
             </button>
@@ -248,7 +259,10 @@ const LeftSidebar = () => {
               <span>Call</span>
               <span aria-label="New call notification" className="absolute top-0 right-6 w-2.5 h-2.5 bg-blue-600 rounded-full ring-2 ring-white" />
             </button>
-            <button className="flex flex-col items-center space-y-1">
+            <button 
+              className="flex flex-col items-center space-y-1"
+              onClick={() => setShowSettings(true)}
+            >
               <FaCog className="text-lg" />
               <span>Settings</span>
             </button>
