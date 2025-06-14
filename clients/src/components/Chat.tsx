@@ -7,6 +7,7 @@ import ImageModal from './ImageModal';
 import SkeletonLoader from './SkeletonLoader';
 import { useState, useEffect, useRef } from 'react';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import CallModal from './CallModal';
 
 interface Message {
     id: number;
@@ -124,6 +125,8 @@ const Chat = () => {
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [messageInput, setMessageInput] = useState('');
+    const [showCallModal, setShowCallModal] = useState(false);
+    const [callType, setCallType] = useState<'audio' | 'video'>('audio');
 
     useEffect(() => {
         // Simulate fetching messages from an API
@@ -312,6 +315,11 @@ const Chat = () => {
         setSelectedImages(images);
         setSelectedImageIndex(index);
         setShowImageModal(true);
+    };
+
+    const handleCall = (type: 'audio' | 'video') => {
+        setCallType(type);
+        setShowCallModal(true);
     };
 
     const renderMenu = (messageId: number, messageType: 'incoming' | 'outgoing') => {
@@ -525,10 +533,18 @@ const Chat = () => {
                         </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                        <button aria-label="Call" className="text-gray-600 text-xl leading-none hover:text-gray-900">
+                        <button 
+                            aria-label="Call" 
+                            className="text-gray-600 text-xl leading-none hover:text-gray-900"
+                            onClick={() => handleCall('audio')}
+                        >
                             <FaPhone className='text-gray-600 w-6 h-6'/>
                         </button>
-                        <button aria-label="Video call" className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl hover:bg-blue-700">
+                        <button 
+                            aria-label="Video call" 
+                            className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl hover:bg-blue-700"
+                            onClick={() => handleCall('video')}
+                        >
                             <FaVideo className='text-white w-4 h-4' />
                         </button>
                         <button 
@@ -663,6 +679,11 @@ const Chat = () => {
                 onClose={() => setShowImageModal(false)} 
                 images={selectedImages}
                 initialIndex={selectedImageIndex}
+            />
+            <CallModal 
+                isOpen={showCallModal}
+                onClose={() => setShowCallModal(false)}
+                type={callType}
             />
         </div>
     );
