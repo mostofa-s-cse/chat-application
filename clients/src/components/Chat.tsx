@@ -1,4 +1,4 @@
-import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload, FaTrash, FaEdit, FaReply, FaForward } from 'react-icons/fa';
+import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload, FaReply } from 'react-icons/fa';
 import { HiDotsVertical } from 'react-icons/hi';
 import { BsEmojiSmile } from "react-icons/bs";
 import LeftSidebar from './LeftSidebar';
@@ -99,11 +99,7 @@ interface Message {
   ];
 
 const Chat = () => {
-    // const [activeMenu, setActiveMenu] = useState<number | null>(null);
-    const [activeMenu, setActiveMenu] = useState<number>(2);
-
-    console.log(activeMenu);
-    const [menuPosition, setMenuPosition] = useState<'up' | 'down'>('down');
+    const [activeMenu, setActiveMenu] = useState<number | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -122,27 +118,28 @@ const Chat = () => {
 
     const handleMenuClick = (messageId: number, event: React.MouseEvent) => {
         event.stopPropagation();
-        if (buttonRef.current) {
-            const buttonRect = buttonRef.current.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - buttonRect.bottom;
-            const spaceAbove = buttonRect.top;
-            setMenuPosition(spaceBelow < 200 && spaceAbove > spaceBelow ? 'up' : 'down');
-        }
         setActiveMenu(activeMenu === messageId ? null : messageId);
     };
 
-    const renderMenu = (messageId: number) => {
-        const menuClasses = `absolute ${menuPosition === 'up' ? 'bottom-full mb-2' : 'top-full mt-5'} right-0 bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.1)] w-40 text-base font-normal border border-gray-100 shadow-xl`;
-        const arrowClasses = `absolute ${menuPosition === 'up' ? 'bottom-0' : 'top-[-8px]'} right-3 w-4 h-4 bg-white rotate-45 border-l border-t border-gray-100 shadow-xl`;
-        const arrowStyle = menuPosition === 'up' 
-            ? { clipPath: 'polygon(0 100%, 100% 100%, 100% 0)' }
-            : { clipPath: 'polygon(0 0, 100% 0, 100% 100%)' };
+    const renderMenu = (messageId: number, messageType: 'incoming' | 'outgoing') => {
+        const menuClasses = `absolute top-full mt-6 ${
+            messageType === 'incoming' ? 'right-0' : 'left-0'
+        } bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.1)] w-40 text-base font-normal border border-gray-100 shadow-xl z-50`;
+        
+        const arrowClasses = `absolute top-[-8px] ${
+            messageType === 'incoming' ? 'right-3' : 'left-3'
+        } w-4 h-4 bg-white rotate-45 border-l border-t border-gray-100 shadow-xl`;
+        
+        const arrowStyle = { clipPath: 'polygon(0 0, 100% 0, 100% 100%)' };
 
         return (
             <div className={menuClasses} style={{fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif'}}>
                 <ul className="py-1">
                     <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150">
                         Remove
+                    </li>
+                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150">
+                        Edit
                     </li>
                     <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150">
                         Forward
@@ -202,13 +199,34 @@ const Chat = () => {
                     </button>
                   </div>
                   <div className="relative" ref={menuRef}>
-                    {activeMenu === message.id && renderMenu(message.id)}
+                    {activeMenu === message.id && renderMenu(message.id, 'incoming')}
                   </div>
               </div>
             );
           case 'outgoing':
             return (
-              <div key={message.id} className="flex items-end justify-end space-x-2">
+              <div key={message.id} className="flex items-center justify-end space-x-2">
+                <div className="relative" ref={menuRef}>
+                    {activeMenu === message.id && renderMenu(message.id, 'outgoing')}
+                </div>
+                <div className="flex items-center space-x-2.5">
+                <button 
+                        ref={buttonRef}
+                        className="text-gray-600 text-xl leading-none hover:text-gray-900"
+                    >
+                        <HiDotsVertical 
+                            className="text-gray-500 hover:text-gray-700 w-4 h-4"  
+                            onClick={(e) => handleMenuClick(message.id, e)}
+                        />
+                    </button>
+                    <button className="text-gray-600 text-xl leading-none hover:text-gray-900">
+                      <FaReply className="text-gray-600 w-4 h-4" />
+                    </button>
+                    <button className="text-gray-600 text-xl leading-none hover:text-gray-900">
+                      <BsEmojiSmile className="text-gray-600 w-4 h-4" />
+                    </button>
+                    
+                </div>
                 <div className="max-w-[70%] bg-blue-200 rounded-xl p-3 text-gray-900 leading-tight select-text">
                   {message.content}
                 </div>
