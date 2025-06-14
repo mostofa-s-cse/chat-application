@@ -684,6 +684,10 @@ const Chat = () => {
                 isOpen={showCallModal}
                 onClose={() => setShowCallModal(false)}
                 type={callType}
+                contact={{
+                    name: 'Olivia Nguyen',
+                    avatar: 'https://storage.googleapis.com/a1aa/image/31130072-5ee0-4273-1569-5e0b5e24910f.jpg'
+                }}
             />
         </div>
     );
