@@ -1,4 +1,4 @@
-import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload, FaReply, FaFile } from 'react-icons/fa';
+import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload, FaReply, FaFile, FaTrash, FaPause, FaPlay } from 'react-icons/fa';
 import { HiDotsVertical } from 'react-icons/hi';
 import { BsEmojiSmile } from "react-icons/bs";
 import LeftSidebar from './LeftSidebar';
@@ -103,10 +103,17 @@ const Chat = () => {
     const [activeMenu, setActiveMenu] = useState<number | null>(null);
     const [showUploadMenu, setShowUploadMenu] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const uploadMenuRef = useRef<HTMLDivElement>(null);
     const emojiPickerRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [messageInput, setMessageInput] = useState('');
 
     useEffect(() => {
@@ -147,6 +154,129 @@ const Chat = () => {
         setShowEmojiPicker(!showEmojiPicker);
     };
 
+    const handleFileSelect = (type: 'photo' | 'document' | 'video') => {
+        if (fileInputRef.current) {
+            fileInputRef.current.accept = type === 'photo' 
+                ? 'image/*' 
+                : type === 'video' 
+                    ? 'video/*' 
+                    : '.pdf,.doc,.docx,.txt';
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            // Here you would typically upload the file and send the message
+            console.log('Selected file:', file);
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleVoiceRecord = async () => {
+        try {
+            if (!isRecording) {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                const audioChunks: Blob[] = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    // Here you would typically upload the audio and send the message
+                    console.log('Recorded audio:', audioBlob);
+                    setRecordingTime(0);
+                    if (recordingTimerRef.current) {
+                        clearInterval(recordingTimerRef.current);
+                    }
+                };
+
+                mediaRecorder.start();
+                mediaRecorderRef.current = mediaRecorder;
+                setIsRecording(true);
+
+                // Start timer
+                recordingTimerRef.current = setInterval(() => {
+                    setRecordingTime(prev => prev + 1);
+                }, 1000);
+
+                // Stop recording after 60 seconds
+                setTimeout(() => {
+                    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                        mediaRecorderRef.current.stop();
+                        stream.getTracks().forEach(track => track.stop());
+                        setIsRecording(false);
+                    }
+                }, 60000);
+            } else {
+                // Stop recording if already recording
+                if (mediaRecorderRef.current) {
+                    mediaRecorderRef.current.stop();
+                    mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+                }
+                setIsRecording(false);
+                setRecordingTime(0);
+                if (recordingTimerRef.current) {
+                    clearInterval(recordingTimerRef.current);
+                }
+            }
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+        }
+    };
+
+    const handleDeleteRecording = () => {
+        if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+        setIsRecording(false);
+        setRecordingTime(0);
+        if (recordingTimerRef.current) {
+            clearInterval(recordingTimerRef.current);
+        }
+    };
+
+    const handleSendRecording = () => {
+        if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+        setIsRecording(false);
+        setRecordingTime(0);
+        if (recordingTimerRef.current) {
+            clearInterval(recordingTimerRef.current);
+        }
+        // Here you would typically send the recording
+    };
+
+    const handlePauseResume = () => {
+        if (mediaRecorderRef.current) {
+            if (isPaused) {
+                mediaRecorderRef.current.resume();
+                recordingTimerRef.current = setInterval(() => {
+                    setRecordingTime(prev => prev + 1);
+                }, 1000);
+            } else {
+                mediaRecorderRef.current.pause();
+                if (recordingTimerRef.current) {
+                    clearInterval(recordingTimerRef.current);
+                }
+            }
+            setIsPaused(!isPaused);
+        }
+    };
+
     const renderMenu = (messageId: number, messageType: 'incoming' | 'outgoing') => {
         const menuClasses = `absolute top-full mt-6 ${
             messageType === 'incoming' ? 'right-0' : 'left-0'
@@ -183,19 +313,31 @@ const Chat = () => {
         return (
             <div className="absolute bottom-full mb-2 left-0 bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.1)] w-48 text-base font-normal border border-gray-100 shadow-xl z-50">
                 <ul className="py-1">
-                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2">
+                    <li 
+                        className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2"
+                        onClick={() => handleFileSelect('photo')}
+                    >
                         <FaCamera className="text-gray-600 w-4 h-4" />
                         <span>Photo</span>
                     </li>
-                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2">
+                    <li 
+                        className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2"
+                        onClick={() => handleFileSelect('document')}
+                    >
                         <FaFile className="text-gray-600 w-4 h-4" />
                         <span>Document</span>
                     </li>
-                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2">
-                        <FaMicrophone className="text-gray-600 w-4 h-4" />
-                        <span>Voice Message</span>
+                    <li 
+                        className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2"
+                        onClick={handleVoiceRecord}
+                    >
+                        <FaMicrophone className={`text-gray-600 w-4 h-4 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} />
+                        <span>{isRecording ? 'Recording...' : 'Voice Message'}</span>
                     </li>
-                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2">
+                    <li 
+                        className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2"
+                        onClick={() => handleFileSelect('video')}
+                    >
                         <FaVideo className="text-gray-600 w-4 h-4" />
                         <span>Video</span>
                     </li>
@@ -339,54 +481,115 @@ const Chat = () => {
       </main>
       {/* Typing indicator and input area */}
       <footer aria-label="Message input area" className="border-t border-gray-200 px-5 py-3 flex flex-col space-y-2 flex-shrink-0">
-        <div className="text-xs text-gray-700 select-text">
-          <span className="font-semibold">Olivia Nguyen</span>, is typing...
-        </div>
-        <form className="flex items-center space-x-3" onSubmit={(e) => e.preventDefault()}>
-          <div className="relative" ref={uploadMenuRef}>
-            <button 
-              aria-label="Add attachment" 
-              className="text-gray-600 text-xl hover:text-gray-900 flex items-center justify-center" 
-              type="button"
-              onClick={handleUploadMenuClick}
-            >
-              <FaPlus />
-            </button>
-            {showUploadMenu && renderUploadMenu()}
-          </div>
-          <div className="relative" ref={emojiPickerRef}>
-            <button 
-              aria-label="Add emoji" 
-              className="text-gray-600 text-xl hover:text-gray-900 flex items-center justify-center" 
-              type="button"
-              onClick={handleEmojiButtonClick}
-            >
-              <BsEmojiSmile />
-            </button>
-            {showEmojiPicker && (
-              <div className="absolute bottom-full mb-2 left-0 z-50">
-                <EmojiPicker onEmojiClick={handleEmojiClick} />
-              </div>
-            )}
-          </div>
-          <input 
-            aria-label="Type your message here" 
-            className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none" 
-            placeholder="Type Here...." 
-            type="text"
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-          />
-          <button aria-label="Camera" className="text-gray-600 text-xl hover:text-gray-900" type="button">
-            <FaCamera />
-          </button>
-          <button aria-label="Voice message" className="text-gray-600 text-xl hover:text-gray-900" type="button">
-            <FaMicrophone />
-          </button>
-          <button aria-label="Send message" className="text-blue-600 text-xl hover:text-blue-800" type="submit">
-            <FaPaperPlane />
-          </button>
-        </form>
+        {!isRecording ? (
+            <>
+                <div className="text-xs text-gray-700 select-text">
+                    <span className="font-semibold">Olivia Nguyen</span>, is typing...
+                </div>
+                <form className="flex items-center space-x-3" onSubmit={(e) => e.preventDefault()}>
+                    <div className="relative" ref={uploadMenuRef}>
+                        <button 
+                            aria-label="Add attachment" 
+                            className="text-gray-600 text-xl hover:text-gray-900 flex items-center justify-center" 
+                            type="button"
+                            onClick={handleUploadMenuClick}
+                        >
+                            <FaPlus />
+                        </button>
+                        {showUploadMenu && renderUploadMenu()}
+                    </div>
+                    <div className="relative" ref={emojiPickerRef}>
+                        <button 
+                            aria-label="Add emoji" 
+                            className="text-gray-600 text-xl hover:text-gray-900 flex items-center justify-center" 
+                            type="button"
+                            onClick={handleEmojiButtonClick}
+                        >
+                            <BsEmojiSmile />
+                        </button>
+                        {showEmojiPicker && (
+                            <div className="absolute bottom-full mb-2 left-0 z-50">
+                                <EmojiPicker onEmojiClick={handleEmojiClick} />
+                            </div>
+                        )}
+                    </div>
+                    <input 
+                        aria-label="Type your message here" 
+                        className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none" 
+                        placeholder="Type Here...." 
+                        type="text"
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                    />
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    <button 
+                        aria-label="Camera" 
+                        className="text-gray-600 text-xl hover:text-gray-900" 
+                        type="button"
+                        onClick={() => handleFileSelect('photo')}
+                    >
+                        <FaCamera />
+                    </button>
+                    <button 
+                        aria-label="Voice message" 
+                        className="text-gray-600 text-xl hover:text-gray-900" 
+                        type="button"
+                        onClick={handleVoiceRecord}
+                    >
+                        <FaMicrophone />
+                    </button>
+                    <button 
+                        aria-label="Send message" 
+                        className="text-blue-600 text-xl hover:text-blue-800" 
+                        type="submit"
+                    >
+                        <FaPaperPlane />
+                    </button>
+                </form>
+            </>
+        ) : (
+            <div className="flex items-center space-x-4">
+                <button 
+                    onClick={handleDeleteRecording}
+                    className="text-red-500 hover:text-red-600"
+                >
+                    <FaTrash className="w-5 h-5" />
+                </button>
+                <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700">Recording</span>
+                        <span className="text-sm text-gray-500">{formatTime(recordingTime)}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div 
+                            className="bg-red-500 h-1.5 rounded-full transition-all duration-1000"
+                            style={{ width: `${(recordingTime / 60) * 100}%` }}
+                        />
+                    </div>
+                </div>
+                <button 
+                    onClick={handlePauseResume}
+                    className="text-gray-600 hover:text-gray-900"
+                >
+                    {isPaused ? (
+                        <FaPlay className="w-5 h-5" />
+                    ) : (
+                        <FaPause className="w-5 h-5" />
+                    )}
+                </button>
+                <button 
+                    onClick={handleSendRecording}
+                    className="text-blue-600 hover:text-blue-800"
+                >
+                    <FaPaperPlane className="w-5 h-5" />
+                </button>
+            </div>
+        )}
       </footer>
     </section>
     </div>
