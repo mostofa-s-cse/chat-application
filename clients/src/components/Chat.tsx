@@ -1,8 +1,9 @@
-import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload, FaReply } from 'react-icons/fa';
+import { FaChevronLeft, FaPhone, FaVideo, FaPlus, FaCamera, FaMicrophone, FaPaperPlane, FaDownload, FaReply, FaFile } from 'react-icons/fa';
 import { HiDotsVertical } from 'react-icons/hi';
 import { BsEmojiSmile } from "react-icons/bs";
 import LeftSidebar from './LeftSidebar';
 import { useState, useEffect, useRef } from 'react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 interface Message {
     id: number;
@@ -100,13 +101,24 @@ interface Message {
 
 const Chat = () => {
     const [activeMenu, setActiveMenu] = useState<number | null>(null);
+    const [showUploadMenu, setShowUploadMenu] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const uploadMenuRef = useRef<HTMLDivElement>(null);
+    const emojiPickerRef = useRef<HTMLDivElement>(null);
+    const [messageInput, setMessageInput] = useState('');
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setActiveMenu(null);
+            }
+            if (uploadMenuRef.current && !uploadMenuRef.current.contains(event.target as Node)) {
+                setShowUploadMenu(false);
+            }
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+                setShowEmojiPicker(false);
             }
         };
 
@@ -119,6 +131,20 @@ const Chat = () => {
     const handleMenuClick = (messageId: number, event: React.MouseEvent) => {
         event.stopPropagation();
         setActiveMenu(activeMenu === messageId ? null : messageId);
+    };
+
+    const handleUploadMenuClick = (event: React.MouseEvent) => {
+        event.stopPropagation();
+        setShowUploadMenu(!showUploadMenu);
+    };
+
+    const handleEmojiClick = (emojiData: EmojiClickData) => {
+        setMessageInput(prev => prev + emojiData.emoji);
+    };
+
+    const handleEmojiButtonClick = (event: React.MouseEvent) => {
+        event.stopPropagation();
+        setShowEmojiPicker(!showEmojiPicker);
     };
 
     const renderMenu = (messageId: number, messageType: 'incoming' | 'outgoing') => {
@@ -149,6 +175,32 @@ const Chat = () => {
                     </li>
                 </ul>
                 <div className={arrowClasses} style={arrowStyle} />
+            </div>
+        );
+    };
+
+    const renderUploadMenu = () => {
+        return (
+            <div className="absolute bottom-full mb-2 left-0 bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.1)] w-48 text-base font-normal border border-gray-100 shadow-xl z-50">
+                <ul className="py-1">
+                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2">
+                        <FaCamera className="text-gray-600 w-4 h-4" />
+                        <span>Photo</span>
+                    </li>
+                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2">
+                        <FaFile className="text-gray-600 w-4 h-4" />
+                        <span>Document</span>
+                    </li>
+                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2">
+                        <FaMicrophone className="text-gray-600 w-4 h-4" />
+                        <span>Voice Message</span>
+                    </li>
+                    <li className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors duration-150 flex items-center space-x-2">
+                        <FaVideo className="text-gray-600 w-4 h-4" />
+                        <span>Video</span>
+                    </li>
+                </ul>
+                <div className="absolute bottom-[-8px] left-3 w-4 h-4 bg-white rotate-45 border-l border-t border-gray-100 shadow-xl" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }} />
             </div>
         );
     };
@@ -291,10 +343,40 @@ const Chat = () => {
           <span className="font-semibold">Olivia Nguyen</span>, is typing...
         </div>
         <form className="flex items-center space-x-3" onSubmit={(e) => e.preventDefault()}>
-          <button aria-label="Add attachment" className="text-gray-600 text-xl hover:text-gray-900" type="button">
-            <FaPlus />
-          </button>
-          <input aria-label="Type your message here" className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none" placeholder="Type Here...." type="text" />
+          <div className="relative" ref={uploadMenuRef}>
+            <button 
+              aria-label="Add attachment" 
+              className="text-gray-600 text-xl hover:text-gray-900 flex items-center justify-center" 
+              type="button"
+              onClick={handleUploadMenuClick}
+            >
+              <FaPlus />
+            </button>
+            {showUploadMenu && renderUploadMenu()}
+          </div>
+          <div className="relative" ref={emojiPickerRef}>
+            <button 
+              aria-label="Add emoji" 
+              className="text-gray-600 text-xl hover:text-gray-900 flex items-center justify-center" 
+              type="button"
+              onClick={handleEmojiButtonClick}
+            >
+              <BsEmojiSmile />
+            </button>
+            {showEmojiPicker && (
+              <div className="absolute bottom-full mb-2 left-0 z-50">
+                <EmojiPicker onEmojiClick={handleEmojiClick} />
+              </div>
+            )}
+          </div>
+          <input 
+            aria-label="Type your message here" 
+            className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none" 
+            placeholder="Type Here...." 
+            type="text"
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+          />
           <button aria-label="Camera" className="text-gray-600 text-xl hover:text-gray-900" type="button">
             <FaCamera />
           </button>
