@@ -1,4 +1,6 @@
 import { FaTimes, FaEdit, FaCamera } from 'react-icons/fa';
+import { useState } from 'react';
+import ImageModal from './ImageModal';
 
 interface ProfileModalProps {
     isOpen: boolean;
@@ -6,7 +8,17 @@ interface ProfileModalProps {
 }
 
 const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
     if (!isOpen) return null;
+
+    const handleImageClick = (images: string[], index: number) => {
+        setSelectedImages(images);
+        setSelectedImageIndex(index);
+        setShowImageModal(true);
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
@@ -24,7 +36,8 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                                 <img 
                                     src="https://storage.googleapis.com/a1aa/image/31130072-5ee0-4273-1569-5e0b5e24910f.jpg" 
                                     alt="Profile" 
-                                    className="w-32 h-32 rounded-full object-cover"
+                                    className="w-32 h-32 rounded-full object-cover cursor-pointer"
+                                    onClick={() => handleImageClick(["https://storage.googleapis.com/a1aa/image/31130072-5ee0-4273-1569-5e0b5e24910f.jpg"], 0)}
                                 />
                                 <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
                                     <FaCamera className="w-4 h-4" />
@@ -77,7 +90,11 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                             <h4 className="text-sm font-semibold text-gray-700 mb-3">Media Shared</h4>
                             <div className="grid grid-cols-3 gap-2">
                                 {[1, 2, 3, 4, 5, 6].map((item) => (
-                                    <div key={item} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                    <div 
+                                        key={item} 
+                                        className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
+                                        onClick={() => handleImageClick([`https://storage.googleapis.com/a1aa/image/${item}.jpg`], 0)}
+                                    >
                                         <img 
                                             src={`https://storage.googleapis.com/a1aa/image/${item}.jpg`} 
                                             alt={`Media ${item}`}
@@ -90,6 +107,12 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                     </div>
                 </div>
             </div>
+            <ImageModal 
+                isOpen={showImageModal} 
+                onClose={() => setShowImageModal(false)} 
+                images={selectedImages}
+                initialIndex={selectedImageIndex}
+            />
         </div>
     );
 };
