@@ -2,14 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaChevronLeft, FaPlus, FaSearch, FaUsers, FaHashtag, FaStar, FaEllipsisH, FaTimes, FaHashtag as FaHashtagIcon, FaCog } from 'react-icons/fa';
 import CreateGroup from './CreateGroupModal';
 import CreateChannel from './CreateCommunityModal';
+import { useNavigate } from 'react-router-dom';
 
-interface CommunityProps {
-    onBack: () => void;
+interface CommunitySidebarProps {
+    onBack?: () => void;
 }
 
 type TabType = 'groups' | 'channels' | 'favorites';
 
-const Community: React.FC<CommunityProps> = ({ onBack }) => {
+const CommunitySidebar: React.FC<CommunitySidebarProps> = ({ onBack }) => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<TabType>('groups');
     const [showSearch, setShowSearch] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -125,6 +127,10 @@ const Community: React.FC<CommunityProps> = ({ onBack }) => {
         // Implement search logic here
     };
 
+    const handleChatSelect = (chat: { type: 'group' | 'channel'; name: string; avatar?: string; members: number }) => {
+        navigate(`/community/${chat.name.toLowerCase().replace(/\s+/g, '-')}`);
+    };
+
     const renderPlusMenu = () => (
         <div 
             ref={plusMenuRef}
@@ -187,7 +193,16 @@ const Community: React.FC<CommunityProps> = ({ onBack }) => {
                 return (
                     <div className="space-y-4">
                         {groups.map(group => (
-                            <div key={group.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div 
+                                key={group.id} 
+                                className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                                onClick={() => handleChatSelect({
+                                    type: 'group',
+                                    name: group.name,
+                                    avatar: group.avatar,
+                                    members: group.members
+                                })}
+                            >
                                 <img src={group.avatar} alt={group.name} className="w-12 h-12 rounded-lg object-cover" />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-center">
@@ -209,7 +224,15 @@ const Community: React.FC<CommunityProps> = ({ onBack }) => {
                 return (
                     <div className="space-y-4">
                         {channels.map(channel => (
-                            <div key={channel.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div 
+                                key={channel.id} 
+                                className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                                onClick={() => handleChatSelect({
+                                    type: 'channel',
+                                    name: channel.name,
+                                    members: channel.members
+                                })}
+                            >
                                 <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
                                     <FaHashtag className="text-blue-600 w-6 h-6" />
                                 </div>
@@ -233,7 +256,16 @@ const Community: React.FC<CommunityProps> = ({ onBack }) => {
                 return (
                     <div className="space-y-4">
                         {favorites.map(favorite => (
-                            <div key={favorite.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div 
+                                key={favorite.id} 
+                                className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                                onClick={() => handleChatSelect({
+                                    type: favorite.type as 'group' | 'channel',
+                                    name: favorite.name,
+                                    avatar: favorite.type === 'group' ? favorite.avatar : undefined,
+                                    members: favorite.members
+                                })}
+                            >
                                 {favorite.type === 'group' ? (
                                     <img src={favorite.avatar} alt={favorite.name} className="w-12 h-12 rounded-lg object-cover" />
                                 ) : (
@@ -263,7 +295,7 @@ const Community: React.FC<CommunityProps> = ({ onBack }) => {
     };
 
     return (
-        <div className="h-full flex flex-col bg-white">
+        <div className="h-full flex flex-col bg-white w-[380px] border-r border-gray-200">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                 <div className="flex items-center">
@@ -378,4 +410,4 @@ const Community: React.FC<CommunityProps> = ({ onBack }) => {
     );
 };
 
-export default Community; 
+export default CommunitySidebar; 

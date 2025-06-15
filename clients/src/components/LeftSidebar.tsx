@@ -4,8 +4,9 @@ import CreateModal from './CreateModal';
 import CallLogs from './CallLogs';
 import CallModal from './CallModal';
 import Settings from './Settings';
-import Community from './Community';
+import CommunitySidebar from './CommunitySidebar';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const getTimeColor = (unread: number) => unread > 0 ? 'text-blue-600 font-semibold' : 'text-gray-400';
 
@@ -126,6 +127,7 @@ const chatData = [
     }
   ];
 const LeftSidebar = () => {
+  const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCallLogs, setShowCallLogs] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
@@ -133,6 +135,10 @@ const LeftSidebar = () => {
   const [showCommunity, setShowCommunity] = useState(false);
   const [callType, setCallType] = useState<'audio' | 'video'>('audio');
   const [selectedContact, setSelectedContact] = useState<{ name: string; avatar: string } | null>(null);
+
+  const handleChatClick = (chat: { id: number; name: string }) => {
+    navigate(`/chat/${chat.id}`);
+  };
 
   const handleCall = (contact: { name: string; avatar: string }, type: 'audio' | 'video') => {
     setSelectedContact(contact);
@@ -146,7 +152,7 @@ const LeftSidebar = () => {
       {showSettings ? (
         <Settings onBack={() => setShowSettings(false)} />
       ) : showCommunity ? (
-        <Community onBack={() => setShowCommunity(false)} />
+        <CommunitySidebar onBack={() => setShowCommunity(false)} />
       ) : showCallLogs ? (
         <CallLogs 
           onBack={() => setShowCallLogs(false)} 
@@ -200,6 +206,7 @@ const LeftSidebar = () => {
                 aria-label={`Chat with ${chat.name}, last message: ${chat.message}${chat.unread > 0 ? `, ${chat.unread} unread message${chat.unread > 1 ? 's' : ''}` : ''}`}
                 className="flex items-start space-x-3 cursor-pointer group hover:bg-gray-50 p-2 rounded-lg transition-colors" 
                 tabIndex={0}
+                onClick={() => handleChatClick(chat)}
               >
                 <div className="relative">
                   <img 
@@ -240,7 +247,10 @@ const LeftSidebar = () => {
           </ul>
           {/* Bottom navigation */}
           <nav aria-label="Bottom navigation" className="flex justify-between items-center border-t border-gray-200 px-5 pb-3 pt-4 text-xs text-gray-500 select-none">
-            <button className="flex flex-col items-center space-y-1 text-black font-semibold">
+            <button 
+              className="flex flex-col items-center space-y-1 text-black font-semibold"
+              onClick={() => navigate('/chat')}
+            >
               <FaComment className="text-lg" />
               <span>Chat</span>
             </button>
