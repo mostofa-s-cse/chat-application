@@ -32,6 +32,9 @@ interface MessageData {
   content?: string;
   id?: string;
   createdAt?: string;
+  type?: string;
+  replyToId?: string;
+  attachments?: any[];
 }
 
 dotenv.config();
@@ -108,9 +111,11 @@ io.on('connection', (socket: CustomSocket) => {
   });
 
   // Join chat room
-  socket.on('join chat', (room: string) => {
+  socket.on('join chat', (data: { chatId: string } | string) => {
     try {
-      if (!room || !socket.userId) {
+      const chatId = typeof data === 'string' ? data : data.chatId;
+      
+      if (!chatId || !socket.userId) {
         throw new Error('Invalid room or user data');
       }
 
@@ -119,17 +124,32 @@ io.on('connection', (socket: CustomSocket) => {
         console.log(`User ${socket.userId} left room: ${socket.currentRoom}`);
       }
       
-      socket.join(room);
-      socket.currentRoom = room;
-      console.log(`User ${socket.userId} joined room: ${room}`);
+      socket.join(chatId);
+      socket.currentRoom = chatId;
+      console.log(`User ${socket.userId} joined room: ${chatId}`);
     } catch (error) {
       console.error('Join chat error:', error);
       socket.emit('join_error', 'Failed to join chat room');
     }
   });
 
+  // Leave chat room
+  socket.on('leave chat', (data: { chatId: string } | string) => {
+    try {
+      const chatId = typeof data === 'string' ? data : data.chatId;
+      
+      if (socket.currentRoom === chatId) {
+        socket.leave(chatId);
+        socket.currentRoom = undefined;
+        console.log(`User ${socket.userId} left room: ${chatId}`);
+      }
+    } catch (error) {
+      console.error('Leave chat error:', error);
+    }
+  });
+
   // Handle new messages
-  socket.on('new message', async (newMessageReceived: MessageData) => {
+  socket.on('send message', async (newMessageReceived: MessageData) => {
     try {
       // console.log('Received message:', newMessageReceived); 
       
@@ -150,6 +170,46 @@ io.on('connection', (socket: CustomSocket) => {
         error: 'Failed to send message',
         details: error.message
       });
+    }
+  });
+
+  // Fallback for old message event (backward compatibility)
+  socket.on('new message', async (newMessageReceived: MessageData) => {
+    try {
+      if (!newMessageReceived?.chatId) {
+        throw new Error('Chat ID is required');
+      }
+
+      if (!newMessageReceived.sender?.id) {
+        throw new Error('Sender information is required');
+      }
+
+      console.log(`Broadcasting message to room: ${newMessageReceived.chatId} (legacy event)`);
+      io.to(newMessageReceived.chatId).emit('message received', newMessageReceived);
+      
+    } catch (error: any) {
+      console.error('Message broadcast error:', error);
+      socket.emit('message_error', {
+        error: 'Failed to send message',
+        details: error.message
+      });
+    }
+  });
+
+  // Handle typing indicators
+  socket.on('typing', (data: { chatId: string; userId: string; isTyping: boolean }) => {
+    try {
+      if (!data.chatId || !data.userId) {
+        throw new Error('Chat ID and user ID are required');
+      }
+
+      if (data.isTyping) {
+        socket.to(data.chatId).emit('typing start', { userId: data.userId, chatId: data.chatId });
+      } else {
+        socket.to(data.chatId).emit('typing stop', { userId: data.userId, chatId: data.chatId });
+      }
+    } catch (error) {
+      console.error('Typing indicator error:', error);
     }
   });
 

@@ -395,6 +395,7 @@ const CommunitySidebar: React.FC<CommunitySidebarProps> = ({ onBack }) => {
                     <div className="pointer-events-auto w-full max-w-md mx-4 relative">
                         <CreateGroup
                             onClose={() => setShowCreateGroup(false)}
+                            selectedUsers={[]}
                         />
                     </div>
                 )}

@@ -36,6 +36,22 @@ export const accessChats = async (req: AuthRequest, res: Response): Promise<void
             bio: true
           }
         },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        },
         latestMessage: {
           include: {
             sender: {
@@ -52,7 +68,26 @@ export const accessChats = async (req: AuthRequest, res: Response): Promise<void
     });
 
     if (chatExists) {
-      res.status(200).send(chatExists);
+      // Transform messages to match Chat component structure exactly
+      const transformedChat = {
+        ...chatExists,
+        messages: chatExists.messages.map(msg => ({
+          id: msg.id,
+          type: mapDbTypeToFrontend(msg.type), // Use helper function for consistent mapping
+          content: msg.content,
+          time: msg.createdAt.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          }),
+          images: msg.imagesJson ? JSON.parse(msg.imagesJson) : undefined,
+          fileName: msg.fileName,
+          fileSize: msg.fileSize,
+          fileType: msg.fileType
+        }))
+      };
+      
+      res.status(200).send(transformedChat);
       return;
     }
 
@@ -77,11 +112,46 @@ export const accessChats = async (req: AuthRequest, res: Response): Promise<void
             profilePic: true,
             bio: true
           }
+        },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
         }
       }
     });
 
-    res.status(200).json(newChat);
+    // Transform new chat messages to match Chat component structure
+    const transformedNewChat = {
+      ...newChat,
+      messages: newChat.messages.map(msg => ({
+        id: msg.id,
+        type: mapDbTypeToFrontend(msg.type),
+        content: msg.content,
+        time: msg.createdAt.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        images: msg.imagesJson ? JSON.parse(msg.imagesJson) : undefined,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        fileType: msg.fileType
+      }))
+    };
+
+    res.status(200).json(transformedNewChat);
   } catch (error) {
     res.status(500).send(error);
   }
@@ -99,6 +169,22 @@ export const fetchAllChats = async (req: AuthRequest, res: Response): Promise<vo
       },
       include: {
         users: true,
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        },
         latestMessage: {
           include: {
             sender: {
@@ -118,7 +204,26 @@ export const fetchAllChats = async (req: AuthRequest, res: Response): Promise<vo
       }
     });
 
-    res.status(200).json(chats);
+    // Transform all chats to match Chat component structure exactly
+    const transformedChats = chats.map(chat => ({
+      ...chat,
+      messages: chat.messages.map(msg => ({
+        id: msg.id,
+        type: mapDbTypeToFrontend(msg.type), // Use helper function for consistent mapping
+        content: msg.content,
+        time: msg.createdAt.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        images: msg.imagesJson ? JSON.parse(msg.imagesJson) : undefined,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        fileType: msg.fileType
+      }))
+    }));
+
+    res.status(200).json(transformedChats);
   } catch (error) {
     console.error(error);
     res.status(500).send(error);
@@ -163,6 +268,22 @@ export const createGroup = async (req: AuthRequest, res: Response): Promise<void
             bio: true
           }
         },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        },
         groupAdmin: {
           select: {
             id: true,
@@ -176,7 +297,26 @@ export const createGroup = async (req: AuthRequest, res: Response): Promise<void
       }
     });
 
-    res.send(chat);
+    // Transform group chat messages to match Chat component structure
+    const transformedGroupChat = {
+      ...chat,
+      messages: chat.messages.map(msg => ({
+        id: msg.id,
+        type: msg.type.toLowerCase(),
+        content: msg.content,
+        time: msg.createdAt.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        images: msg.imagesJson ? JSON.parse(msg.imagesJson) : undefined,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        fileType: msg.fileType
+      }))
+    };
+
+    res.send(transformedGroupChat);
   } catch (error) {
     res.sendStatus(500);
   }
@@ -204,6 +344,22 @@ export const renameGroup = async (req: Request, res: Response): Promise<void> =>
             bio: true
           }
         },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        },
         groupAdmin: {
           select: {
             id: true,
@@ -222,7 +378,26 @@ export const renameGroup = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    res.status(200).send(chat);
+    // Transform renamed group chat messages to match Chat component structure
+    const transformedRenamedChat = {
+      ...chat,
+      messages: chat.messages.map(msg => ({
+        id: msg.id,
+        type: msg.type.toLowerCase(),
+        content: msg.content,
+        time: msg.createdAt.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        images: msg.imagesJson ? JSON.parse(msg.imagesJson) : undefined,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        fileType: msg.fileType
+      }))
+    };
+
+    res.status(200).send(transformedRenamedChat);
   } catch (error) {
     console.error(error);
     res.status(500).send(error);
@@ -266,6 +441,22 @@ export const addToGroup = async (req: Request, res: Response): Promise<void> => 
             bio: true
           }
         },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        },
         groupAdmin: {
           select: {
             id: true,
@@ -279,7 +470,26 @@ export const addToGroup = async (req: Request, res: Response): Promise<void> => 
       }
     });
 
-    res.status(200).send(chat);
+    // Transform updated group chat messages to match Chat component structure
+    const transformedUpdatedChat = {
+      ...chat,
+      messages: chat.messages.map(msg => ({
+        id: msg.id,
+        type: msg.type.toLowerCase(),
+        content: msg.content,
+        time: msg.createdAt.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        images: msg.imagesJson ? JSON.parse(msg.imagesJson) : undefined,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        fileType: msg.fileType
+      }))
+    };
+
+    res.status(200).send(transformedUpdatedChat);
   } catch (error) {
     res.status(500).send(error);
   }
@@ -322,6 +532,22 @@ export const removeFromGroup = async (req: Request, res: Response): Promise<void
             bio: true
           }
         },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        },
         groupAdmin: {
           select: {
             id: true,
@@ -335,8 +561,282 @@ export const removeFromGroup = async (req: Request, res: Response): Promise<void
       }
     });
 
-    res.status(200).send(chat);
+    // Transform updated group chat messages to match Chat component structure
+    const transformedUpdatedChat = {
+      ...chat,
+      messages: chat.messages.map(msg => ({
+        id: msg.id,
+        type: msg.type.toLowerCase(),
+        content: msg.content,
+        time: msg.createdAt.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        images: msg.imagesJson ? JSON.parse(msg.imagesJson) : undefined,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        fileType: msg.fileType
+      }))
+    };
+
+    res.status(200).send(transformedUpdatedChat);
   } catch (error) {
     res.status(500).send(error);
   }
 }; 
+
+export const getChatById = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { chatId } = req.params;
+  
+  console.log('getChatById called with chatId:', chatId);
+  console.log('User ID:', req.rootUserId);
+  
+  if (!chatId) {
+    res.status(400).send({ message: "Chat ID is required" });
+    return;
+  }
+
+  try {
+    const chat = await prisma.chat.findFirst({
+      where: {
+        id: chatId,
+        users: {
+          some: {
+            id: req.rootUserId!
+          }
+        }
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profilePic: true,
+            bio: true
+          }
+        },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        },
+        latestMessage: {
+          include: {
+            sender: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!chat) {
+      res.status(404).send({ message: "Chat not found" });
+      return;
+    }
+
+    // Transform messages to match Chat component structure exactly
+    const transformedChat = {
+      ...chat,
+      messages: chat.messages.map(msg => ({
+        id: msg.id,
+        type: mapDbTypeToFrontend(msg.type), // Use helper function for consistent mapping
+        content: msg.content,
+        time: msg.createdAt.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        images: msg.imagesJson ? JSON.parse(msg.imagesJson) : undefined,
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        fileType: msg.fileType
+      }))
+    };
+    
+    res.status(200).send(transformedChat);
+  } catch (error) {
+    console.error('Error fetching chat by ID:', error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+export const getChatsForSidebar = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.rootUserId;
+    
+    if (!userId) {
+      res.status(401).json({ error: 'User not authenticated' });
+      return;
+    }
+
+    const chats = await prisma.chat.findMany({
+      where: {
+        users: {
+          some: {
+            id: userId
+          }
+        }
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profilePic: true,
+            bio: true,
+            isOnline: true
+          }
+        },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        },
+        latestMessage: {
+          include: {
+            sender: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePic: true
+              }
+            }
+          }
+        },
+        groupAdmin: true
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      }
+    });
+
+    // Transform chats to match LeftSidebar expected structure
+    const sidebarChats = chats.map(chat => {
+      // Get the other user in the chat (not current user)
+      const otherUser = chat.users.find(user => user.id !== userId);
+      
+      // Get the latest message
+      const latestMessage = chat.latestMessage;
+      
+      // Determine if it's a group chat
+      const isGroup = chat.isGroup;
+      
+      // Get chat name (group name or other user's name)
+      const chatName = isGroup ? chat.chatName : `${otherUser?.firstName} ${otherUser?.lastName}`;
+      
+      // Get avatar (group chat uses first user's avatar, individual uses other user's)
+      const avatar = isGroup ? chat.users[0]?.profilePic : otherUser?.profilePic;
+      
+      // Get last message content
+      const message = latestMessage ? latestMessage.content : 'No messages yet';
+      
+      // Format time
+      const time = latestMessage ? formatTime(latestMessage.createdAt) : 'No time';
+      
+      // Calculate unread count (you can implement this based on your schema)
+      const unread = 0; // TODO: Implement unread count
+      
+      // Determine if message is read
+      const read = latestMessage ? (latestMessage as any).isRead || false : false;
+      
+      // Check if user is online
+      const online = otherUser ? otherUser.isOnline : false;
+
+      return {
+        id: chat.id,
+        name: chatName,
+        avatar: avatar || 'https://storage.googleapis.com/a1aa/image/default-avatar.jpg',
+        message: message,
+        time: time,
+        unread: unread,
+        read: read,
+        online: online,
+        chat: chat // Keep the full chat object for reference
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: sidebarChats
+    });
+
+  } catch (error) {
+    console.error('Error getting sidebar chats:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Helper function to map database message types to frontend types
+function mapDbTypeToFrontend(dbType: string): string {
+  switch (dbType.toUpperCase()) {
+    case 'TIMESTAMP':
+      return 'timestamp';
+    case 'INCOMING':
+      return 'incoming';
+    case 'OUTGOING':
+      return 'outgoing';
+    case 'FILE':
+      return 'file';
+    case 'TEXT':
+      return 'outgoing'; // Default to outgoing for text messages
+    default:
+      return 'outgoing'; // Fallback
+  }
+}
+
+// Helper function to format time
+function formatTime(date: Date): string {
+  const now = new Date();
+  const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+  
+  if (diffInHours < 24) {
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  } else if (diffInHours < 48) {
+    return 'Yesterday';
+  } else if (diffInHours < 168) {
+    return date.toLocaleDateString('en-US', { weekday: 'long' });
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  }
+} 

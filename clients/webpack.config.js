@@ -20,6 +20,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'build'),
     filename: '[name].[contenthash].js',
+    publicPath: '/',
     clean: true,
   },
   module: {
@@ -62,7 +63,24 @@ module.exports = {
     },
     port: 3000,
     hot: true,
-    historyApiFallback: true,
+    historyApiFallback: {
+      index: '/',
+      disableDotRule: true,
+      rewrites: [
+        { from: /^\/chat\/.*$/, to: '/index.html' },
+        { from: /^\/community\/.*$/, to: '/index.html' },
+        { from: /^\/login\/.*$/, to: '/index.html' },
+        { from: /^\/register\/.*$/, to: '/index.html' },
+      ],
+    },
+    compress: true,
+    open: false,
+    client: {
+      overlay: {
+        errors: true,
+        warnings: false,
+      },
+    },
   },
   optimization: {
     splitChunks: {

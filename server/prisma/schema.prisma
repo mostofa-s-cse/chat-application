@@ -15,11 +15,16 @@ model User {
   password   String
   bio        String    @default("Available")
   profilePic String    @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+  isOnline   Boolean   @default(false)
+  lastSeen   DateTime  @default(now())
   contacts   User[]    @relation("UserContacts")
   contactsOf User[]    @relation("UserContacts")
   chats      Chat[]    @relation("ChatUsers")
   messages   Message[]
+  readMessages Message[] @relation("ReadMessages")
   groupAdmin Chat[]    @relation("GroupAdmin")
+  reactions  MessageReaction[]
+  typingIn   Chat[]    @relation("TypingUsers")
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 }
@@ -35,18 +40,78 @@ model Chat {
   latestMessageId String? @unique
   groupAdmin    User?     @relation("GroupAdmin", fields: [groupAdminId], references: [id])
   groupAdminId  String?
+  typingUsers  User[]    @relation("TypingUsers")
+  unreadCount  Int       @default(0)
+  isArchived   Boolean   @default(false)
+  isPinned     Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
 
 model Message {
+  id          String   @id @default(cuid())
+  content     String
+  type        MessageType
+  chatId      String
+  senderId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Message metadata
+  isEdited    Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+  isRead      Boolean  @default(false)
+  
+  // File and media support
+  fileName    String?
+  fileSize    String?
+  fileType    String?
+  fileUrl     String?
+  
+  // Images support (stored as JSON string, will be parsed in application)
+  imagesJson  String?  @db.Text // JSON string of image URLs
+  
+  // Reactions and replies
+  reactions   MessageReaction[]
+  replyTo     Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replyToId   String?
+  replies     Message[] @relation("MessageReplies")
+  
+  // Read receipts
+  readBy      User[]    @relation("ReadMessages")
+  
+  // Latest message for chat
+  latestFor   Chat?     @relation("LatestMessage")
+  
+  // Relationships
+  chat        Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender      User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  
+  @@index([chatId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model MessageReaction {
   id        String   @id @default(uuid())
-  content   String
-  sender    User     @relation(fields: [senderId], references: [id])
-  senderId  String
-  chat      Chat     @relation(fields: [chatId], references: [id])
-  chatId    String
-  latestFor Chat?    @relation("LatestMessage")
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  emoji     String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, userId, emoji])
+}
+
+enum MessageType {
+  TIMESTAMP
+  INCOMING
+  OUTGOING
+  FILE
+  TEXT
+  IMAGE
+  AUDIO
+  VIDEO
+  DOCUMENT
 } 

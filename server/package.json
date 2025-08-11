@@ -10,7 +10,12 @@
     "build": "tsc",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:all": "tsx -e \"import('./src/seeders/index.js').then(m => m.runAllSeeders())\"",
+    "seed:users": "tsx src/seeders/index.ts users",
+    "seed:chats": "tsx src/seeders/index.ts chats",
+    "seed:messages": "tsx src/seeders/index.ts messages",
+    "seed:clear": "tsx src/seeders/index.js clear"
   },
   "author": "Mostofa Shahid",
   "license": "ISC",

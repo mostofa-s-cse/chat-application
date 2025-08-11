@@ -1,41 +1,55 @@
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { createGroupChat } from '../store/slices/chatSlice';
 
-const suggestedUsers = [
-  {
-    name: 'Abir Safiyat',
-    avatar: 'https://storage.googleapis.com/a1aa/image/46704056-f844-47a3-9c79-2f175a2dbc41.jpg',
-    alt: 'Avatar of Sayrana Safiyat, a woman wearing a brown hijab holding flowers with a sunset background',
-  },
-  {
-    name: 'Sumit Islam',
-    avatar: 'https://storage.googleapis.com/a1aa/image/21ec4bef-5d21-4e77-1fbd-ac96b225fc83.jpg',
-    alt: 'Avatar of Prapti Islam, a person standing on an airport tarmac near an airplane',
-  },
-  {
-    name: 'Hridoy Ahmed',
-    avatar: 'https://storage.googleapis.com/a1aa/image/f58f2943-bad7-4143-9969-3d326782dc14.jpg',
-    alt: 'Avatar of Mitanour Akter, a woman wearing a black niqab sitting indoors',
-  },
-  {
-    name: 'Tanbir Mir',
-    avatar: 'https://storage.googleapis.com/a1aa/image/f58f2943-bad7-4143-9969-3d326782dc14.jpg',
-    alt: 'Avatar of Mitanour Akter, a woman wearing a black niqab sitting indoors',
-  },
-];
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  profilePic: string;
+  bio: string;
+}
 
-const CreateGroupModal = ({ onClose }: { onClose: () => void }) => {
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [search, setSearch] = useState('');
+interface CreateGroupModalProps {
+  onClose: () => void;
+  selectedUsers: User[];
+}
 
-  const toggleUser = (name: string) => {
-    setSelectedUsers(prev =>
-      prev.includes(name) ? prev.filter(u => u !== name) : [...prev, name]
-    );
+const CreateGroupModal = ({ onClose, selectedUsers }: CreateGroupModalProps) => {
+  const dispatch = useDispatch();
+  const [groupName, setGroupName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!groupName.trim()) {
+      alert('Please enter a group name');
+      return;
+    }
+
+    if (selectedUsers.length === 0) {
+      alert('Please select at least one user');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const userIds = selectedUsers.map(user => user.id);
+      await dispatch(createGroupChat({ chatName: groupName.trim(), users: userIds }) as any);
+      onClose();
+    } catch (error) {
+      console.error('Error creating group chat:', error);
+      alert('Failed to create group chat. Please try again.');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const filteredUsers = search.trim()
-    ? suggestedUsers.filter(user => user.name.toLowerCase().includes(search.toLowerCase()))
-    : suggestedUsers;
+  const getDisplayName = (user: User) => {
+    return `${user.firstName} ${user.lastName}`;
+  };
 
   return (
     <div className="w-full max-w-md rounded-3xl bg-white">
@@ -52,46 +66,59 @@ const CreateGroupModal = ({ onClose }: { onClose: () => void }) => {
           ×
         </button>
       </header>
-      <form className="p-6 flex flex-col gap-4">
-        <label className="font-semibold text-base text-gray-700">Group Name</label>
-        <input className="border rounded-lg px-3 py-2" type="text" placeholder="Enter group name" />
-        <div className="mt-4">
-          <label className="font-semibold text-base text-gray-700 mb-2 block">Select Users</label>
-          <input
-            className="border rounded-lg px-3 py-2 mb-2 w-full"
-            type="text"
-            placeholder="Search users..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+      
+      <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
+        <div>
+          <label className="font-semibold text-base text-gray-700">Group Name</label>
+          <input 
+            className="border rounded-lg px-3 py-2 w-full mt-1" 
+            type="text" 
+            placeholder="Enter group name"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            required
           />
-          <ul className="max-h-40 overflow-y-auto divide-y divide-gray-200">
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map(user => (
-                <li 
-                  key={user.name} 
-                  onClick={() => toggleUser(user.name)}
-                  className={`flex items-center gap-3 py-2 px-3 cursor-pointer transition-colors duration-200
-                    ${selectedUsers.includes(user.name) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-                >
-                  <img src={user.avatar} alt={user.alt} className="w-8 h-8 rounded-full object-cover" />
-                  <span className={`text-base ${selectedUsers.includes(user.name) ? 'text-blue-600 font-semibold' : 'text-black'}`}>
-                    {user.name}
-                  </span>
-                </li>
-              ))
-            ) : (
-              <li className="py-2 text-gray-400 text-center">No users found.</li>
-            )}
-          </ul>
         </div>
-        {selectedUsers.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {selectedUsers.map(name => (
-              <span key={name} className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm">{name}</span>
-            ))}
-          </div>
-        )}
-        <button type="submit" className="mt-4 bg-blue-600 text-white rounded-lg px-4 py-2 font-semibold">Create</button>
+        
+        <div>
+          <label className="font-semibold text-base text-gray-700 mb-2 block">
+            Selected Users ({selectedUsers.length})
+          </label>
+          
+          {selectedUsers.length > 0 ? (
+            <div className="max-h-40 overflow-y-auto border rounded-lg p-3">
+              {selectedUsers.map(user => (
+                <div key={user.id} className="flex items-center gap-3 py-2 px-2 border-b border-gray-100 last:border-b-0">
+                  <img 
+                    src={user.profilePic} 
+                    alt={getDisplayName(user)} 
+                    className="w-8 h-8 rounded-full object-cover" 
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-base font-medium text-gray-900 block truncate">
+                      {getDisplayName(user)}
+                    </span>
+                    <span className="text-sm text-gray-500 truncate block">
+                      {user.email}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              No users selected
+            </div>
+          )}
+        </div>
+        
+        <button 
+          type="submit" 
+          disabled={isCreating || !groupName.trim() || selectedUsers.length === 0}
+          className="mt-4 bg-blue-600 text-white rounded-lg px-4 py-2 font-semibold disabled:bg-blue-400 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+        >
+          {isCreating ? 'Creating...' : 'Create Group'}
+        </button>
       </form>
     </div>
   );

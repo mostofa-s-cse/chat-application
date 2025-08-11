@@ -86,6 +86,14 @@ const App: React.FC = () => {
           }
         />
         <Route
+          path="/chat/:chatId"
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/community"
           element={
             <ProtectedRoute>
