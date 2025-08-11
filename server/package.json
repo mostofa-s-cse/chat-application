@@ -1,0 +1,68 @@
+{
+  "name": "realtime-chat-app",
+  "version": "1.0.0",
+  "description": "This is a real-time chat application website that allows users to connect with each other and chat in real-time. It was built using the full stack (Express.js, React.js, and Node.js), Socket.io, Redux Toolkit, and Tailwind CSS.",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": "Mostofa Shahid",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.8.2",
+    "arrify": "^3.0.0",
+    "base64-js": "^1.5.1",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^5.1.0",
+    "forwarded": "^0.2.0",
+    "gcp-metadata": "^6.1.1",
+    "google-auth-library": "^9.15.1",
+    "gtoken": "^7.1.0",
+    "ipaddr.js": "^2.2.0",
+    "jsonwebtoken": "^9.0.0",
+    "jwt-check-expiration": "^1.0.5",
+    "jwt-decode": "^4.0.0",
+    "negotiator": "^1.0.0",
+    "punycode": "^2.3.1",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.22.9",
+    "@babel/core": "^7.22.9",
+    "@babel/preset-env": "^7.22.9",
+    "@babel/preset-react": "^7.22.5",
+    "@babel/preset-typescript": "^7.23.3",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/body-parser": "^1.19.5",
+    "@types/cookie-parser": "^1.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^22.15.29",
+    "babel-loader": "^10.0.0",
+    "concurrently": "^9.1.2",
+    "prettier": "^3.0.0",
+    "prisma": "^6.8.2",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mostofa-s-cse/Realtime-Chat-App.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mostofa-s-cse/Realtime-Chat-App/issues"
+  },
+  "homepage": "https://github.com/mostofa-s-cse/Realtime-Chat-App#readme"
+}

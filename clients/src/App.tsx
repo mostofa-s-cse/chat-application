@@ -1,82 +1,99 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { getCurrentUser } from './store/slices/authSlice';
+import { useAuth } from './hooks/useAuth';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
-import ForgotPassword from './pages/auth/ForgotPassword';
-import ResetPassword from './pages/auth/ResetPassword';
 import Chat from './components/Chat';
-import Home from './pages/Home';
-import CommunityChat from './components/CommunityChat';
 import CommunitySidebar from './components/CommunitySidebar';
 
-const CommunityRoute = () => {
-  const navigate = useNavigate();
-  return <CommunitySidebar onBack={() => navigate('/')} />;
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { isAuthenticated, isInitialized } = useAuth();
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
 };
 
-const CommunityChatRoute = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  // In a real app, you would fetch the community data based on the id
-  return (
-    <CommunityChat
-      onBack={() => navigate('/community')}
-      type="group"
-      name="Sample Group"
-      members={10}
-      avatar="https://storage.googleapis.com/a1aa/image/31130072-5ee0-4273-1569-5e0b5e24910f.jpg"
-    />
-  );
+const PublicRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { isAuthenticated, isInitialized } = useAuth();
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/chat" replace />;
+  }
+
+  return <>{children}</>;
 };
 
-const App = () => {
-  // You can use Redux or Context to check if the user is authenticated
-  const isAuthenticated = true; // Replace with your auth logic
+const App: React.FC = () => {
+  const dispatch = useDispatch();
+  const { token } = useAuth();
+
+  useEffect(() => {
+    if (token) {
+      dispatch(getCurrentUser() as any);
+    }
+  }, [dispatch, token]);
 
   return (
     <Router>
       <Routes>
-        {/* Auth routes - only accessible when NOT authenticated */}
-        <Route 
-          path="/login" 
-          element={!isAuthenticated ? <Login /> : <Navigate to="/" />} 
-        />
-        <Route 
-          path="/register" 
-          element={!isAuthenticated ? <Register /> : <Navigate to="/" />} 
-        />
-        <Route 
-          path="/forgot-password" 
-          element={!isAuthenticated ? <ForgotPassword /> : <Navigate to="/" />} 
-        />
-        <Route 
-          path="/reset-password" 
-          element={!isAuthenticated ? <ResetPassword /> : <Navigate to="/" />} 
-        />
-
-        {/* Protected routes - only accessible when authenticated */}
         <Route
-          path="/"
-          element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          }
         />
         <Route
           path="/chat"
-          element={isAuthenticated ? <Chat /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/chat/:id"
-          element={isAuthenticated ? <Chat /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/community"
-          element={isAuthenticated ? <CommunityRoute /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <CommunitySidebar />
+            </ProtectedRoute>
+          }
         />
-        <Route
-          path="/community/:id"
-          element={isAuthenticated ? <CommunityChatRoute /> : <Navigate to="/login" />}
-        />
-        
-        {/* 404 fallback */}
-        <Route path="*" element={<div>404 Not Found</div>} />
+        <Route path="/" element={<Navigate to="/chat" replace />} />
       </Routes>
     </Router>
   );
